@@ -1,14 +1,32 @@
 [project]
-name = "autogen_blog_project"
+name = "automated-blog"
 version = "0.1.0"
 description = "Automated blog generation using AI agents."
-authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.12.15",
+    "asyncio>=4.0.0",
+    "autogen-agentchat>=0.7.1",
+    "autogen-ext[openai]>=0.7.1",
+    "bs4>=0.0.2",
+    "fastapi>=0.104.0",
+    "feedparser>=6.0.11",
+    "psycopg2-binary>=2.9.7",
+    "python-dotenv>=1.1.1",
+    "redis>=5.0.0",
+    "requests>=2.31.0",
+    "sqlalchemy>=2.0.0",
+    "uvicorn[standard]>=0.24.0",
+]
 
-[tool.setuptools]
-packages = ["autogen_blog"]
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-mock>=3.10.0",
+]
 
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.15",
+]
