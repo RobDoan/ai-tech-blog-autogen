@@ -1,8 +1,16 @@
+import asyncio
 from services.topic_discovery.trend_spotter import TrendSpotter
+from src.autogen_blog.database import init_db, close_db
 
-def main():
-    """Example usage of the TrendSpotter module"""
+async def main():
+    """Example usage of the TrendSpotter module with database integration"""
     print("Welcome to the Automated Blog Project!")
+    print("Initializing database...")
+    
+    # Initialize database
+    await init_db()
+    print("✅ Database initialized successfully")
+    
     print("Testing Trend Identification Module...\n")
 
     # Initialize trend spotter
@@ -26,6 +34,10 @@ def main():
 
     else:
         print("❌ Failed to identify any trends")
+    
+    # Close database connection
+    await close_db()
+    print("✅ Database connection closed")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
