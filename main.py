@@ -1,15 +1,21 @@
 import asyncio
+import sys
+from pathlib import Path
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent / "src"))
+
 from services.topic_discovery.trend_spotter import TrendSpotter
-from src.autogen_blog.database import init_db, close_db
+from autogen_blog.file_storage import FileStorage, save_trending_topics
 
 async def main():
-    """Example usage of the TrendSpotter module with database integration"""
+    """Example usage of the TrendSpotter module with file export"""
     print("Welcome to the Automated Blog Project!")
-    print("Initializing database...")
+    print("Initializing file storage system...")
     
-    # Initialize database
-    await init_db()
-    print("✅ Database initialized successfully")
+    # Initialize file storage
+    storage = FileStorage()
+    print("✅ File storage initialized successfully")
     
     print("Testing Trend Identification Module...\n")
 
@@ -31,13 +37,20 @@ async def main():
 
         if trend_result.get('fallback'):
             print("\n⚠️  Note: This is a fallback result (API keys not configured)")
+        
+        # Save trend to file
+        trend_file = save_trending_topics([trend_result])
+        print(f"✅ Trend data saved to: {trend_file}")
 
     else:
         print("❌ Failed to identify any trends")
     
-    # Close database connection
-    await close_db()
-    print("✅ Database connection closed")
+    # Display storage statistics
+    stats = storage.get_storage_stats()
+    print(f"\n📊 Storage Statistics:")
+    print(f"  - Blog Posts: {stats['blog_posts']} files")
+    print(f"  - Trending Topics: {stats['trending_topics']} files")
+    print(f"  - Content Generations: {stats['content_generations']} files")
 
 if __name__ == "__main__":
     asyncio.run(main())

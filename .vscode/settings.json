@@ -3,5 +3,6 @@
     "newsapi",
     "serpapi",
     "stackoverflow"
-  ]
+  ],
+  "kiroAgent.configureMCP": "Disabled"
 }
