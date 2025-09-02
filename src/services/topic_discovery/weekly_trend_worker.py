@@ -17,10 +17,57 @@ from pathlib import Path
 from dataclasses import asdict
 import tempfile
 import time
+from contextlib import contextmanager
 
 from .news_scanner import TechNewsScanner
 from .trend_spotter import TrendSpotter
 from src.py_env import aws_access_key_id, aws_secret_access_key, aws_region, s3_bucket_name
+
+
+class FileLockManager:
+    """Context manager for file-based locking to prevent resource leaks"""
+    
+    def __init__(self, lock_file_path: Path, logger: logging.Logger):
+        self.lock_file_path = lock_file_path
+        self.logger = logger
+        self.lock_file = None
+        
+    def __enter__(self):
+        """Acquire lock when entering context"""
+        try:
+            self.lock_file = open(self.lock_file_path, 'w')
+            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.lock_file.write(f"{os.getpid()}\n{datetime.now(timezone.utc).isoformat()}\n")
+            self.lock_file.flush()
+            return self
+        except (IOError, OSError) as e:
+            if self.lock_file and not self.lock_file.closed:
+                try:
+                    self.lock_file.close()
+                except Exception:
+                    pass
+            self.lock_file = None
+            raise e
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Release lock when exiting context"""
+        if self.lock_file and not self.lock_file.closed:
+            try:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+            except Exception as e:
+                self.logger.warning(f"Error releasing file lock: {str(e)}")
+            finally:
+                try:
+                    self.lock_file.close()
+                except Exception as e:
+                    self.logger.warning(f"Error closing lock file: {str(e)}")
+        
+        # Clean up lock file
+        try:
+            if self.lock_file_path.exists():
+                self.lock_file_path.unlink()
+        except Exception as e:
+            self.logger.warning(f"Error removing lock file: {str(e)}")
 
 
 class WeeklyTrendWorker:
@@ -119,13 +166,24 @@ class WeeklyTrendWorker:
             'error_message': None
         }
         
-        try:
-            # Check for concurrent execution
-            if self.config['concurrent_execution_check'] and not self._acquire_lock():
+        # Handle concurrent execution check with proper resource management
+        if self.config['concurrent_execution_check']:
+            try:
+                with FileLockManager(self.lock_file_path, self.logger):
+                    return await self._run_discovery_with_lock(execution_start, results)
+            except (IOError, OSError):
                 error_msg = "Another worker instance is already running"
                 self.logger.error(error_msg)
                 results['error_message'] = error_msg
+                results['completed_at'] = datetime.now(timezone.utc).isoformat()
+                self._update_status_file(results)
                 return results
+        else:
+            return await self._run_discovery_with_lock(execution_start, results)
+    
+    async def _run_discovery_with_lock(self, execution_start: datetime, results: Dict[str, Any]) -> Dict[str, Any]:
+        """Run discovery process with lock already acquired"""
+        try:
             
             self.logger.info("Starting weekly trend discovery process")
             
@@ -172,11 +230,8 @@ class WeeklyTrendWorker:
             results['error_message'] = error_msg
             results['completed_at'] = datetime.now(timezone.utc).isoformat()
         
-        finally:
-            # Release lock and update status
-            self._release_lock()
-            self._update_status_file(results)
-        
+        # Update status file with results
+        self._update_status_file(results)
         return results
     
     async def _collect_news_trends(self) -> List[Dict]:
@@ -377,28 +432,6 @@ class WeeklyTrendWorker:
         self.logger.error("All S3 upload attempts failed")
         return None
     
-    def _acquire_lock(self) -> bool:
-        """Acquire file-based lock to prevent concurrent execution"""
-        try:
-            self.lock_file = open(self.lock_file_path, 'w')
-            fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.lock_file.write(f"{os.getpid()}\\n{datetime.now(timezone.utc).isoformat()}\\n")
-            self.lock_file.flush()
-            return True
-        except (IOError, OSError):
-            if hasattr(self, 'lock_file'):
-                self.lock_file.close()
-            return False
-    
-    def _release_lock(self):
-        """Release file-based lock"""
-        try:
-            if hasattr(self, 'lock_file'):
-                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
-                self.lock_file.close()
-                self.lock_file_path.unlink(missing_ok=True)
-        except Exception as e:
-            self.logger.warning(f"Error releasing lock: {str(e)}")
     
     def _update_status_file(self, results: Dict):
         """Update local status file with execution results"""
@@ -434,3 +467,8 @@ class WeeklyTrendWorker:
             self.logger.error(f"Error reading status file: {str(e)}")
         
         return {'worker_type': 'weekly_trend_worker', 'status': 'never_run'}
+    
+    def cleanup(self):
+        """Cleanup method - no longer needed with context manager approach"""
+        # Context managers handle all resource cleanup automatically
+        pass

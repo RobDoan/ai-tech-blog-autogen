@@ -120,3 +120,4 @@ compiled/
 # Pyre type checker
 .pyre/
 .claude/settings.local.json
+data/
