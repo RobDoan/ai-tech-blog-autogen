@@ -14,7 +14,7 @@ The Weekly Trend Worker replaces database dependencies with a robust CSV export 
 - **CSV Export**: Standardized format with timestamped naming and metadata
 - **S3 Upload**: Robust cloud storage with retry logic and exponential backoff
 - **Local Backup**: Automatic local file storage when S3 is unavailable
-- **Concurrent Execution Prevention**: File-based locking to prevent overlapping runs
+- **Concurrent Execution Prevention**: Resource-safe file-based locking using context managers to prevent overlapping runs
 - **Comprehensive Logging**: Structured logging with monitoring integration
 - **Error Recovery**: Graceful degradation and retry mechanisms
 
@@ -216,7 +216,7 @@ The system includes comprehensive error handling:
 - **RSS Feed Failures**: Individual feed failures don't stop the process
 - **S3 Upload Failures**: Automatic retry with exponential backoff
 - **API Timeouts**: Graceful fallbacks to available data sources
-- **Concurrent Execution**: File-based locking prevents overlapping runs
+- **Concurrent Execution**: Resource-safe file-based locking with automatic cleanup prevents overlapping runs
 - **Network Issues**: Robust timeout and retry mechanisms
 
 ## Exit Codes
@@ -292,7 +292,8 @@ async def _aggregate_and_score_trends(self, news_trends, external_trend):
 
 3. **"Concurrent execution detected"**  
    - Another worker instance is running
-   - Check for stale lock files in data directory
+   - Lock files are automatically cleaned up by context managers
+   - Stale lock files should be rare due to improved resource management
 
 4. **"No trends discovered"**
    - RSS feeds may be temporarily unavailable
@@ -319,7 +320,8 @@ This will show detailed information about:
 
 - **TechNewsScanner**: RSS feed processing and topic extraction
 - **TrendSpotter**: External API integration for trend validation
-- **WeeklyTrendWorker**: Main orchestration class
+- **WeeklyTrendWorker**: Main orchestration class with resource-safe file locking
+- **FileLockManager**: Context manager for safe file-based locking without resource leaks
 - **Configuration**: Centralized settings and environment management
 - **Worker Script**: Standalone executable for scheduling
 
@@ -341,4 +343,16 @@ RSS Feeds → Topic Extraction → Trend Aggregation → CSV Export → S3 Uploa
 External APIs → Validation → Combined Scoring → Local Backup → Status File
 ```
 
-This completes the Weekly Trend Worker implementation with comprehensive documentation and examples for production deployment.
+### Technical Improvements
+
+#### Resource Management
+- **Context Managers**: All file operations use proper context managers to prevent resource leaks
+- **Automatic Cleanup**: File handles and locks are automatically released even during exceptions
+- **Exception Safety**: Robust error handling ensures system stability under all conditions
+
+#### Concurrent Execution Safety
+- **FileLockManager**: Custom context manager for safe file-based locking
+- **Automatic Lock Release**: Locks are automatically released when the context exits
+- **Process Isolation**: Each worker instance properly isolates its resources
+
+This completes the Weekly Trend Worker implementation with comprehensive documentation, resource-safe operation, and examples for production deployment.

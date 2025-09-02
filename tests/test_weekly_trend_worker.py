@@ -345,33 +345,36 @@ class TestWeeklyTrendWorker:
         assert status['last_run_status'] == 'completed'
         assert status['trends_discovered'] == 42
     
-    def test_acquire_and_release_lock(self, worker):
-        """Test file locking mechanism"""
-        # Test acquiring lock
-        acquired = worker._acquire_lock()
-        assert acquired is True
+    def test_file_lock_context_manager(self, worker):
+        """Test file locking with context manager"""
+        from src.services.topic_discovery.weekly_trend_worker import FileLockManager
         
-        # Test lock file exists
         lock_path = Path(worker.config['lock_file_path'])
-        assert lock_path.exists()
         
-        # Test releasing lock
-        worker._release_lock()
+        # Test successful lock acquisition and release
+        with FileLockManager(lock_path, worker.logger) as lock_manager:
+            assert lock_path.exists()
+            assert lock_manager.lock_file is not None
+            assert not lock_manager.lock_file.closed
+        
+        # Lock should be cleaned up after context exit
         assert not lock_path.exists()
     
-    def test_acquire_lock_already_locked(self, worker):
-        """Test acquiring lock when already locked"""
-        # First acquisition should succeed
-        assert worker._acquire_lock() is True
+    def test_file_lock_concurrent_access_prevention(self, worker):
+        """Test that concurrent access is properly prevented"""
+        from src.services.topic_discovery.weekly_trend_worker import FileLockManager
         
-        # Create another worker with same config
-        worker2 = WeeklyTrendWorker(config=worker.config)
+        lock_path = Path(worker.config['lock_file_path'])
         
-        # Second acquisition should fail
-        assert worker2._acquire_lock() is False
+        # First lock manager acquires lock
+        with FileLockManager(lock_path, worker.logger):
+            # Second lock manager should fail to acquire lock
+            with pytest.raises((IOError, OSError)):
+                with FileLockManager(lock_path, worker.logger):
+                    pass  # Should never reach here
         
-        # Cleanup
-        worker._release_lock()
+        # Lock should be cleaned up
+        assert not lock_path.exists()
     
     @pytest.mark.asyncio
     async def test_run_weekly_discovery_success(self, worker, mock_news_trends, mock_external_trend):
