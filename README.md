@@ -175,17 +175,21 @@ optional arguments:
 ## 🏗️ Project Structure
 
 ```
-src/autogen_blog/
-├── multi_agent_models.py          # Data models and configuration
-├── base_agent.py                  # Base agent infrastructure
-├── content_planner_agent.py       # Content planning agent
-├── writer_agent.py                # Writing agent
-├── critic_agent.py                # Review and feedback agent
-├── seo_agent.py                   # SEO optimization agent
-├── code_agent.py                  # Code example generation agent
-├── blog_writer_orchestrator.py    # Main orchestration logic
-├── multi_agent_blog_writer.py     # CLI interface
-└── __init__.py                    # Package initialization
+src/
+├── autogen_blog/                   # 🤖 Multi-Agent Blog Writer System
+│   ├── multi_agent_models.py      # Data models and configuration
+│   ├── base_agent.py              # Base agent infrastructure
+│   ├── content_planner_agent.py   # Content planning agent
+│   ├── writer_agent.py            # Writing agent
+│   ├── critic_agent.py            # Review and feedback agent
+│   ├── seo_agent.py               # SEO optimization agent
+│   ├── code_agent.py              # Code example generation agent
+│   ├── blog_writer_orchestrator.py # Main orchestration logic
+│   ├── multi_agent_blog_writer.py # CLI interface
+│   └── __init__.py                # Package initialization
+├── services/                      # 🔍 Topic Discovery & Analysis
+│   └── topic_discovery/           # Trending topic identification
+└── api/                           # 🌐 REST API endpoints
 ```
 
 ## 📚 Documentation
