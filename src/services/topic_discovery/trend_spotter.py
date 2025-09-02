@@ -4,7 +4,7 @@ import requests
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from .py_env import serpapi_api_key, newsapi_api_key, apify_api_token
+from src.py_env import serpapi_api_key, newsapi_api_key, apify_api_token
 
 @dataclass
 class TrendCandidate:
