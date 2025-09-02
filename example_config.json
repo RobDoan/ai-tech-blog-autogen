@@ -1,0 +1,12 @@
+{
+  "max_trends_per_run": 25,
+  "score_threshold": 0.2,
+  "concurrent_execution_check": true,
+  "retry_attempts": 3,
+  "retry_delay": 5,
+  "s3_bucket": "my-trending-topics-bucket",
+  "s3_key_prefix": "trends/weekly/",
+  "local_backup_dir": "./data/backups",
+  "status_file_path": "./data/worker_status.json",
+  "lock_file_path": "./data/worker.lock"
+}
