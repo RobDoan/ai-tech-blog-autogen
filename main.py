@@ -5,12 +5,24 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
+# Load environment configuration first
+from py_env import validate_config
+
 from services.topic_discovery.trend_spotter import TrendSpotter
 from autogen_blog.file_storage import FileStorage, save_trending_topics
 
 async def main():
     """Example usage of the TrendSpotter module with file export"""
     print("Welcome to the Automated Blog Project!")
+    
+    # Validate configuration
+    print("Checking configuration...")
+    config_status = validate_config()
+    
+    for component, is_valid in config_status.items():
+        status_icon = "✅" if is_valid else "⚠️"
+        print(f"  {status_icon} {component.replace('_', ' ').title()}: {'Configured' if is_valid else 'Not configured'}")
+    
     print("Initializing file storage system...")
     
     # Initialize file storage

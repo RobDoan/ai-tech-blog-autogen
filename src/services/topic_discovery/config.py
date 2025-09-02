@@ -8,6 +8,12 @@ import os
 from typing import Dict, List
 from dataclasses import dataclass
 from src.py_env import (
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET_NAME, S3_KEY_PREFIX, S3_FILE_NAMING_PATTERN,
+    SERPAPI_API_KEY, NEWSAPI_API_KEY, APIFY_API_TOKEN,
+    MAX_TRENDS_PER_RUN, SCORE_THRESHOLD, CONCURRENT_EXECUTION_CHECK, RETRY_ATTEMPTS, RETRY_DELAY,
+    LOCAL_BACKUP_DIR, STATUS_FILE_PATH, LOCK_FILE_PATH,
+    LOG_LEVEL, STRUCTURED_LOGGING, LOG_FILE_PATH, LOG_MAX_BYTES, LOG_BACKUP_COUNT,
+    # Legacy imports for backward compatibility
     aws_access_key_id, aws_secret_access_key, aws_region, s3_bucket_name,
     serpapi_api_key, newsapi_api_key, apify_api_token
 )
@@ -63,27 +69,27 @@ RSS_SOURCES = [
 ]
 
 
-# Worker configuration
+# Worker configuration using centralized config values
 WORKER_CONFIG = {
-    'max_trends_per_run': int(os.getenv('MAX_TRENDS_PER_RUN', 50)),
-    'score_threshold': float(os.getenv('SCORE_THRESHOLD', 0.1)),
-    'concurrent_execution_check': os.getenv('CONCURRENT_EXECUTION_CHECK', 'true').lower() == 'true',
-    'retry_attempts': int(os.getenv('RETRY_ATTEMPTS', 3)),
-    'retry_delay': int(os.getenv('RETRY_DELAY', 5)),
-    's3_bucket': s3_bucket_name or os.getenv('S3_BUCKET_NAME', 'trending-topics-data'),
-    's3_key_prefix': os.getenv('S3_KEY_PREFIX', 'trends/'),
-    'local_backup_dir': os.getenv('LOCAL_BACKUP_DIR', './data/backups'),
-    'status_file_path': os.getenv('STATUS_FILE_PATH', './data/worker_status.json'),
-    'lock_file_path': os.getenv('LOCK_FILE_PATH', './data/worker.lock')
+    'max_trends_per_run': MAX_TRENDS_PER_RUN,
+    'score_threshold': SCORE_THRESHOLD,
+    'concurrent_execution_check': CONCURRENT_EXECUTION_CHECK,
+    'retry_attempts': RETRY_ATTEMPTS,
+    'retry_delay': RETRY_DELAY,
+    's3_bucket': S3_BUCKET_NAME,
+    's3_key_prefix': S3_KEY_PREFIX,
+    'local_backup_dir': str(LOCAL_BACKUP_DIR),
+    'status_file_path': str(STATUS_FILE_PATH),
+    'lock_file_path': str(LOCK_FILE_PATH)
 }
 
 
-# S3 configuration
+# S3 configuration using centralized config values
 S3_CONFIG = {
-    'bucket_name': s3_bucket_name or os.getenv('S3_BUCKET_NAME', 'trending-topics-data'),
-    'region': aws_region or os.getenv('AWS_REGION', 'us-east-1'),
-    'key_prefix': os.getenv('S3_KEY_PREFIX', 'trends/'),
-    'file_naming_pattern': os.getenv('S3_FILE_NAMING_PATTERN', 'weekly-trends-{timestamp}.csv'),
+    'bucket_name': S3_BUCKET_NAME,
+    'region': AWS_REGION,
+    'key_prefix': S3_KEY_PREFIX,
+    'file_naming_pattern': S3_FILE_NAMING_PATTERN,
     'metadata_tags': {
         'source': 'weekly-trend-worker',
         'data_type': 'trending_topics',
@@ -176,15 +182,15 @@ TECH_KEYWORDS = [
 ]
 
 
-# API configuration
+# API configuration using centralized config values
 API_CONFIG = {
     'serpapi': {
-        'api_key': serpapi_api_key,
+        'api_key': SERPAPI_API_KEY,
         'timeout': 30,
         'max_retries': 3
     },
     'newsapi': {
-        'api_key': newsapi_api_key,
+        'api_key': NEWSAPI_API_KEY,
         'timeout': 30,
         'max_retries': 3,
         'sources': [
@@ -199,7 +205,7 @@ API_CONFIG = {
         ]
     },
     'apify': {
-        'api_token': apify_api_token,
+        'api_token': APIFY_API_TOKEN,
         'timeout': 60,
         'max_retries': 2
     }
@@ -220,14 +226,14 @@ CSV_CONFIG = {
 }
 
 
-# Logging configuration
+# Logging configuration using centralized config values
 LOGGING_CONFIG = {
-    'level': os.getenv('LOG_LEVEL', 'INFO').upper(),
+    'level': LOG_LEVEL.upper(),
     'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'structured': os.getenv('STRUCTURED_LOGGING', 'false').lower() == 'true',
-    'file_path': os.getenv('LOG_FILE_PATH'),  # None for console only
-    'max_bytes': int(os.getenv('LOG_MAX_BYTES', 10485760)),  # 10MB
-    'backup_count': int(os.getenv('LOG_BACKUP_COUNT', 5))
+    'structured': STRUCTURED_LOGGING,
+    'file_path': LOG_FILE_PATH if LOG_FILE_PATH else None,  # None for console only
+    'max_bytes': LOG_MAX_BYTES,  # 10MB
+    'backup_count': LOG_BACKUP_COUNT
 }
 
 
@@ -264,36 +270,28 @@ def validate_configuration() -> List[str]:
     issues = []
     
     # Check required environment variables for S3
-    if not aws_access_key_id and not aws_secret_access_key:
+    if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
         issues.append("AWS credentials not configured (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)")
     
     # Check S3 bucket name
-    if not s3_bucket_name:
+    if not S3_BUCKET_NAME:
         issues.append("S3 bucket name not configured (S3_BUCKET_NAME)")
     
     # Check API keys (warn but don't fail)
-    if not serpapi_api_key:
+    if not SERPAPI_API_KEY:
         issues.append("Warning: SERPAPI_API_KEY not configured (will use mock data)")
     
-    if not newsapi_api_key:
+    if not NEWSAPI_API_KEY:
         issues.append("Warning: NEWSAPI_API_KEY not configured (will use mock data)")
     
-    if not apify_api_token:
+    if not APIFY_API_TOKEN:
         issues.append("Warning: APIFY_API_TOKEN not configured (will use mock data)")
     
     # Validate numeric configurations
-    try:
-        max_trends = int(os.getenv('MAX_TRENDS_PER_RUN', 50))
-        if max_trends <= 0:
-            issues.append("MAX_TRENDS_PER_RUN must be positive")
-    except ValueError:
-        issues.append("MAX_TRENDS_PER_RUN must be a valid integer")
+    if MAX_TRENDS_PER_RUN <= 0:
+        issues.append("MAX_TRENDS_PER_RUN must be positive")
     
-    try:
-        threshold = float(os.getenv('SCORE_THRESHOLD', 0.1))
-        if threshold < 0 or threshold > 1:
-            issues.append("SCORE_THRESHOLD must be between 0 and 1")
-    except ValueError:
-        issues.append("SCORE_THRESHOLD must be a valid float")
+    if SCORE_THRESHOLD < 0 or SCORE_THRESHOLD > 1:
+        issues.append("SCORE_THRESHOLD must be between 0 and 1")
     
     return issues

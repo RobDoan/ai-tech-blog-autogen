@@ -1,13 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from dotenv import load_dotenv
+import sys
+from pathlib import Path
 
-load_dotenv()
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import centralized configuration
+from py_env import APP_NAME, APP_VERSION
 
 app = FastAPI(
-    title=os.getenv("APP_NAME", "Automated Blog"),
-    version=os.getenv("APP_VERSION", "0.1.0"),
+    title=APP_NAME,
+    version=APP_VERSION,
     description="Automated blog generation using AI agents"
 )
 

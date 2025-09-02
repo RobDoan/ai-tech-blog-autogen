@@ -14,6 +14,14 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# Load environment configuration first
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from py_env import (
+    OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TEMPERATURE, OPENAI_MAX_TOKENS, AGENT_TIMEOUT,
+    MAX_ITERATIONS, ENABLE_CODE_AGENT, ENABLE_SEO_AGENT, OUTPUT_FORMAT, 
+    SAVE_CONVERSATION_LOG, QUALITY_THRESHOLD, validate_config
+)
+
 from .blog_writer_orchestrator import BlogWriterOrchestrator
 from .multi_agent_models import (
     AgentConfig,
@@ -40,32 +48,31 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def load_config() -> tuple[AgentConfig, WorkflowConfig]:
-    """Load configuration from environment variables and defaults."""
-    # Get OpenAI API key
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
+    """Load configuration from centralized environment configuration."""
+    # Validate that OpenAI API key is available
+    if not OPENAI_API_KEY:
         raise ConfigurationError(
             "OPENAI_API_KEY environment variable is required. "
-            "Set it with: export OPENAI_API_KEY='your-api-key-here'"
+            "Set it in your .env file: OPENAI_API_KEY='your-api-key-here'"
         )
     
-    # Agent configuration
+    # Agent configuration using centralized config values
     agent_config = AgentConfig(
-        model=os.getenv('OPENAI_MODEL', 'gpt-4'),
-        temperature=float(os.getenv('OPENAI_TEMPERATURE', '0.7')),
-        max_tokens=int(os.getenv('OPENAI_MAX_TOKENS', '4000')),
-        openai_api_key=api_key,
-        timeout_seconds=int(os.getenv('AGENT_TIMEOUT', '120'))
+        model=OPENAI_MODEL,
+        temperature=OPENAI_TEMPERATURE,
+        max_tokens=OPENAI_MAX_TOKENS,
+        openai_api_key=OPENAI_API_KEY,
+        timeout_seconds=AGENT_TIMEOUT
     )
     
-    # Workflow configuration
+    # Workflow configuration using centralized config values
     workflow_config = WorkflowConfig(
-        max_iterations=int(os.getenv('MAX_ITERATIONS', '3')),
-        enable_code_agent=os.getenv('ENABLE_CODE_AGENT', 'true').lower() == 'true',
-        enable_seo_agent=os.getenv('ENABLE_SEO_AGENT', 'true').lower() == 'true',
-        output_format=os.getenv('OUTPUT_FORMAT', 'markdown'),
-        save_conversation_log=os.getenv('SAVE_CONVERSATION_LOG', 'true').lower() == 'true',
-        quality_threshold=float(os.getenv('QUALITY_THRESHOLD', '7.0'))
+        max_iterations=MAX_ITERATIONS,
+        enable_code_agent=ENABLE_CODE_AGENT,
+        enable_seo_agent=ENABLE_SEO_AGENT,
+        output_format=OUTPUT_FORMAT,
+        save_conversation_log=SAVE_CONVERSATION_LOG,
+        quality_threshold=QUALITY_THRESHOLD
     )
     
     return agent_config, workflow_config
@@ -133,7 +140,7 @@ async def generate_blog_post(
                     with open(metadata_path, 'w', encoding='utf-8') as f:
                         json.dump({
                             'metadata': result.metadata,
-                            'conversation_log': [msg.dict() for msg in result.generation_log],
+                            'conversation_log': [msg.model_dump() for msg in result.generation_log],
                             'success': result.success,
                             'generation_time_seconds': result.generation_time_seconds
                         }, f, indent=2, default=str)
@@ -267,6 +274,19 @@ Environment Variables:
         logger = logging.getLogger(__name__)
         
         try:
+            # Validate environment configuration
+            config_status = validate_config()
+            
+            print("🔍 Configuration Check Results:")
+            print("=" * 40)
+            
+            for component, is_valid in config_status.items():
+                status_icon = "✅" if is_valid else "❌"
+                print(f"  {status_icon} {component.replace('_', ' ').title()}: {'OK' if is_valid else 'Missing/Invalid'}")
+            
+            print()
+            
+            # Load and display specific configuration
             agent_config, workflow_config = load_config()
             logger.info("Configuration check passed!")
             logger.info(f"Model: {agent_config.model}")
@@ -276,7 +296,12 @@ Environment Variables:
             logger.info(f"Code agent enabled: {workflow_config.enable_code_agent}")
             logger.info(f"SEO agent enabled: {workflow_config.enable_seo_agent}")
             logger.info(f"Quality threshold: {workflow_config.quality_threshold}")
-            print("✅ Configuration is valid!")
+            
+            if all(config_status.values()):
+                print("✅ All configuration is valid!")
+            else:
+                print("⚠️  Some configuration is missing but basic functionality will work")
+                
         except ConfigurationError as e:
             logger.error(f"Configuration error: {e}")
             print(f"❌ Configuration error: {e}")
