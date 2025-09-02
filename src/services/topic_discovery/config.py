@@ -13,6 +13,8 @@ from src.py_env import (
     MAX_TRENDS_PER_RUN, SCORE_THRESHOLD, CONCURRENT_EXECUTION_CHECK, RETRY_ATTEMPTS, RETRY_DELAY,
     LOCAL_BACKUP_DIR, STATUS_FILE_PATH, LOCK_FILE_PATH,
     LOG_LEVEL, STRUCTURED_LOGGING, LOG_FILE_PATH, LOG_MAX_BYTES, LOG_BACKUP_COUNT,
+    # AI Configuration imports
+    OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TEMPERATURE, OPENAI_MAX_TOKENS,
     # Legacy imports for backward compatibility
     aws_access_key_id, aws_secret_access_key, aws_region, s3_bucket_name,
     serpapi_api_key, newsapi_api_key, apify_api_token
