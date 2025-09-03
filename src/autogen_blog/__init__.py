@@ -29,5 +29,5 @@ __all__ = [
     "AgentConfig",
     "WorkflowConfig",
     "TargetAudience",
-    "BlogWriterOrchestrator"
+    "BlogWriterOrchestrator",
 ]

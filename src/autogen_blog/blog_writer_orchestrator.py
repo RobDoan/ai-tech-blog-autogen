@@ -57,8 +57,12 @@ class BlogWriterOrchestrator:
         self.content_planner = ContentPlannerAgent(agent_config)
         self.writer = WriterAgent(agent_config)
         self.critic = CriticAgent(agent_config)
-        self.seo_agent = SEOAgent(agent_config) if workflow_config.enable_seo_agent else None
-        self.code_agent = CodeAgent(agent_config) if workflow_config.enable_code_agent else None
+        self.seo_agent = (
+            SEOAgent(agent_config) if workflow_config.enable_seo_agent else None
+        )
+        self.code_agent = (
+            CodeAgent(agent_config) if workflow_config.enable_code_agent else None
+        )
 
         # Initialize workflow state
         self.agent_state = AgentState()
@@ -73,7 +77,7 @@ class BlogWriterOrchestrator:
         if not logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
-                '%(asctime)s - Orchestrator - %(levelname)s - %(message)s'
+                "%(asctime)s - Orchestrator - %(levelname)s - %(message)s"
             )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
@@ -84,7 +88,7 @@ class BlogWriterOrchestrator:
         self,
         topic: str,
         description: str | None = None,
-        book_reference: str | None = None
+        book_reference: str | None = None,
     ) -> BlogResult:
         """
         Generate a complete blog post through the multi-agent workflow.
@@ -105,8 +109,12 @@ class BlogWriterOrchestrator:
                 topic=topic,
                 description=description,
                 book_reference=book_reference,
-                target_audience=self.workflow_config.__dict__.get('target_audience', 'intermediate'),
-                preferred_length=self.workflow_config.__dict__.get('preferred_length', 1500)
+                target_audience=self.workflow_config.__dict__.get(
+                    "target_audience", "intermediate"
+                ),
+                preferred_length=self.workflow_config.__dict__.get(
+                    "preferred_length", 1500
+                ),
             )
 
             self.logger.info(f"Starting blog generation for topic: {topic}")
@@ -156,11 +164,11 @@ class BlogWriterOrchestrator:
                     "reading_time_minutes": final_blog_content.metadata.reading_time_minutes,
                     "seo_score": final_blog_content.metadata.seo_score,
                     "code_blocks_count": len(final_blog_content.code_blocks),
-                    "sections_count": len(final_blog_content.sections)
+                    "sections_count": len(final_blog_content.sections),
                 },
                 generation_log=self.agent_state.conversation_history,
                 success=True,
-                generation_time_seconds=generation_time
+                generation_time_seconds=generation_time,
             )
 
             self.logger.info(
@@ -182,12 +190,12 @@ class BlogWriterOrchestrator:
                 content=partial_content,
                 metadata={
                     "error_occurred": True,
-                    "partial_content": len(partial_content) > 0
+                    "partial_content": len(partial_content) > 0,
                 },
                 generation_log=self.agent_state.conversation_history,
                 success=False,
                 error_message=str(e),
-                generation_time_seconds=generation_time
+                generation_time_seconds=generation_time,
             )
 
     async def _create_content_outline(self, blog_input: BlogInput) -> ContentOutline:
@@ -203,11 +211,13 @@ class BlogWriterOrchestrator:
                 message_type=MessageType.OUTLINE,
                 content=f"Created outline with {len(outline.sections)} sections",
                 timestamp=datetime.now(),
-                metadata={"outline_title": outline.title}
+                metadata={"outline_title": outline.title},
             )
             self.agent_state.add_message(planning_message)
 
-            self.logger.info(f"Outline created: '{outline.title}' with {len(outline.sections)} sections")
+            self.logger.info(
+                f"Outline created: '{outline.title}' with {len(outline.sections)} sections"
+            )
             return outline
 
         except Exception as e:
@@ -215,9 +225,7 @@ class BlogWriterOrchestrator:
             raise BlogGenerationError(f"Content outline creation failed: {e}")
 
     async def _generate_initial_content(
-        self,
-        outline: ContentOutline,
-        blog_input: BlogInput
+        self, outline: ContentOutline, blog_input: BlogInput
     ) -> BlogContent:
         """Generate initial blog content using the writer agent."""
         self.logger.info("Generating initial content...")
@@ -231,11 +239,13 @@ class BlogWriterOrchestrator:
                 message_type=MessageType.CONTENT,
                 content=f"Generated content with {content.metadata.word_count} words",
                 timestamp=datetime.now(),
-                metadata={"word_count": content.metadata.word_count}
+                metadata={"word_count": content.metadata.word_count},
             )
             self.agent_state.add_message(writing_message)
 
-            self.logger.info(f"Initial content generated: {content.metadata.word_count} words")
+            self.logger.info(
+                f"Initial content generated: {content.metadata.word_count} words"
+            )
             return content
 
         except Exception as e:
@@ -243,10 +253,7 @@ class BlogWriterOrchestrator:
             raise BlogGenerationError(f"Initial content generation failed: {e}")
 
     async def _review_and_refine_content(
-        self,
-        content: BlogContent,
-        outline: ContentOutline,
-        blog_input: BlogInput
+        self, content: BlogContent, outline: ContentOutline, blog_input: BlogInput
     ) -> BlogContent:
         """Review content and refine based on feedback."""
         self.logger.info("Reviewing and refining content...")
@@ -260,9 +267,7 @@ class BlogWriterOrchestrator:
             try:
                 # Get review feedback
                 feedback = await self.critic.review_content(
-                    current_content,
-                    outline,
-                    self.workflow_config.quality_threshold
+                    current_content, outline, self.workflow_config.quality_threshold
                 )
 
                 # Log the review
@@ -271,13 +276,18 @@ class BlogWriterOrchestrator:
                     message_type=MessageType.FEEDBACK,
                     content=f"Review score: {feedback.overall_score}/10, Approved: {feedback.approved}",
                     timestamp=datetime.now(),
-                    metadata={"score": feedback.overall_score, "approved": feedback.approved}
+                    metadata={
+                        "score": feedback.overall_score,
+                        "approved": feedback.approved,
+                    },
                 )
                 self.agent_state.add_message(review_message)
 
                 # Check if content is approved
                 if await self.critic.approve_content(current_content, feedback):
-                    self.logger.info(f"Content approved after {iteration + 1} iterations")
+                    self.logger.info(
+                        f"Content approved after {iteration + 1} iterations"
+                    )
                     return current_content
 
                 # If not approved and not final iteration, refine content
@@ -292,10 +302,7 @@ class BlogWriterOrchestrator:
 
                     # Revise content
                     current_content = await self.writer.revise_content(
-                        current_content,
-                        feedback_summary,
-                        outline,
-                        blog_input
+                        current_content, feedback_summary, outline, blog_input
                     )
 
                     # Log revision
@@ -304,7 +311,7 @@ class BlogWriterOrchestrator:
                         message_type=MessageType.CONTENT,
                         content=f"Revised content based on feedback (iteration {iteration + 1})",
                         timestamp=datetime.now(),
-                        metadata={"iteration": iteration + 1}
+                        metadata={"iteration": iteration + 1},
                     )
                     self.agent_state.add_message(revision_message)
 
@@ -315,16 +322,16 @@ class BlogWriterOrchestrator:
                     raise BlogGenerationError(f"Content review failed: {e}")
                 else:
                     # Return the last working version
-                    self.logger.warning("Using content from previous iteration due to review error")
+                    self.logger.warning(
+                        "Using content from previous iteration due to review error"
+                    )
                     break
 
         self.logger.info("Content refinement completed")
         return current_content
 
     async def _apply_seo_optimization(
-        self,
-        content: BlogContent,
-        outline: ContentOutline
+        self, content: BlogContent, outline: ContentOutline
     ) -> BlogContent:
         """Apply SEO optimization to the content."""
         if not self.seo_agent:
@@ -335,15 +342,12 @@ class BlogWriterOrchestrator:
         try:
             # Analyze keywords
             keyword_analysis = await self.seo_agent.analyze_keywords(
-                topic=outline.title,
-                content=content,
-                outline=outline
+                topic=outline.title, content=content, outline=outline
             )
 
             # Optimize content
             seo_optimized = await self.seo_agent.optimize_content(
-                content,
-                keyword_analysis
+                content, keyword_analysis
             )
 
             # Update content with SEO improvements
@@ -352,7 +356,7 @@ class BlogWriterOrchestrator:
                 content=seo_optimized.optimized_content,
                 sections=content.sections,
                 code_blocks=content.code_blocks,
-                metadata=content.metadata
+                metadata=content.metadata,
             )
 
             # Update metadata with SEO information
@@ -366,11 +370,13 @@ class BlogWriterOrchestrator:
                 message_type=MessageType.SEO_ANALYSIS,
                 content=f"SEO optimization completed, score: {seo_optimized.seo_score}/100",
                 timestamp=datetime.now(),
-                metadata={"seo_score": seo_optimized.seo_score}
+                metadata={"seo_score": seo_optimized.seo_score},
             )
             self.agent_state.add_message(seo_message)
 
-            self.logger.info(f"SEO optimization completed with score: {seo_optimized.seo_score}/100")
+            self.logger.info(
+                f"SEO optimization completed with score: {seo_optimized.seo_score}/100"
+            )
             return optimized_content
 
         except Exception as e:
@@ -380,9 +386,7 @@ class BlogWriterOrchestrator:
             return content
 
     async def _integrate_code_examples(
-        self,
-        content: BlogContent,
-        outline: ContentOutline
+        self, content: BlogContent, outline: ContentOutline
     ) -> BlogContent:
         """Integrate code examples into the content."""
         if not self.code_agent:
@@ -392,7 +396,9 @@ class BlogWriterOrchestrator:
 
         try:
             # Identify code opportunities
-            opportunities = await self.code_agent.identify_code_opportunities(content, outline)
+            opportunities = await self.code_agent.identify_code_opportunities(
+                content, outline
+            )
 
             if not opportunities:
                 self.logger.info("No code opportunities identified")
@@ -400,8 +406,7 @@ class BlogWriterOrchestrator:
 
             # Generate code examples
             code_examples = await self.code_agent.generate_code_examples(
-                opportunities,
-                content_context=f"Topic: {content.title}"
+                opportunities, content_context=f"Topic: {content.title}"
             )
 
             if not code_examples:
@@ -417,11 +422,13 @@ class BlogWriterOrchestrator:
                 message_type=MessageType.CODE,
                 content=f"Integrated {len(code_examples)} code examples",
                 timestamp=datetime.now(),
-                metadata={"code_examples_count": len(code_examples)}
+                metadata={"code_examples_count": len(code_examples)},
             )
             self.agent_state.add_message(code_message)
 
-            self.logger.info(f"Code integration completed with {len(code_examples)} examples")
+            self.logger.info(
+                f"Code integration completed with {len(code_examples)} examples"
+            )
             return updated_content
 
         except Exception as e:
@@ -431,9 +438,7 @@ class BlogWriterOrchestrator:
             return content
 
     def _integrate_code_into_content(
-        self,
-        content: BlogContent,
-        code_examples: list[Any]
+        self, content: BlogContent, code_examples: list[Any]
     ) -> BlogContent:
         """Integrate generated code examples into the content."""
         # This is a simplified integration approach
@@ -450,14 +455,16 @@ class BlogWriterOrchestrator:
             section_pattern = f"## {section_title}"
             if section_pattern in updated_content:
                 # Add code block after the section
-                code_markdown = f"\\n\\n```{code_block.language}\\n{code_block.code}\\n```\\n\\n"
+                code_markdown = (
+                    f"\\n\\n```{code_block.language}\\n{code_block.code}\\n```\\n\\n"
+                )
                 if code_block.explanation:
                     code_markdown += f"{code_block.explanation}\\n\\n"
 
                 updated_content = updated_content.replace(
                     section_pattern,
                     section_pattern + code_markdown,
-                    1  # Replace only first occurrence
+                    1,  # Replace only first occurrence
                 )
 
                 new_code_blocks.append(code_block)
@@ -472,13 +479,11 @@ class BlogWriterOrchestrator:
             content=updated_content,
             sections=content.sections,
             code_blocks=new_code_blocks,
-            metadata=content.metadata
+            metadata=content.metadata,
         )
 
     async def _perform_final_quality_check(
-        self,
-        content: BlogContent,
-        blog_input: BlogInput
+        self, content: BlogContent, blog_input: BlogInput
     ) -> BlogContent:
         """Perform final quality check on the generated content."""
         self.logger.info("Performing final quality check...")
@@ -501,13 +506,15 @@ class BlogWriterOrchestrator:
             if len(content.sections) < 2:
                 quality_issues.append("Content has too few sections")
 
-            if not content.content.startswith('# '):
+            if not content.content.startswith("# "):
                 quality_issues.append("Content should start with H1 title")
 
             # Check for conclusion
             content_lower = content.content.lower()
-            conclusion_indicators = ['conclusion', 'summary', 'final', 'wrap up']
-            has_conclusion = any(indicator in content_lower for indicator in conclusion_indicators)
+            conclusion_indicators = ["conclusion", "summary", "final", "wrap up"]
+            has_conclusion = any(
+                indicator in content_lower for indicator in conclusion_indicators
+            )
 
             if not has_conclusion:
                 quality_issues.append("Content appears to lack a conclusion")
@@ -518,7 +525,7 @@ class BlogWriterOrchestrator:
                 message_type=MessageType.FEEDBACK,
                 content=f"Final quality check: {len(quality_issues)} issues found",
                 timestamp=datetime.now(),
-                metadata={"quality_issues": quality_issues}
+                metadata={"quality_issues": quality_issues},
             )
             self.agent_state.add_message(quality_message)
 
@@ -538,7 +545,7 @@ class BlogWriterOrchestrator:
         try:
             # Try to get content from workflow state
             initial_content = self.agent_state.get_workflow_data("initial_content")
-            if initial_content and hasattr(initial_content, 'content'):
+            if initial_content and hasattr(initial_content, "content"):
                 return initial_content.content
 
             # Try to get outline
@@ -563,9 +570,7 @@ class BlogWriterOrchestrator:
             return ""
 
     async def regenerate_with_feedback(
-        self,
-        original_result: BlogResult,
-        user_feedback: str
+        self, original_result: BlogResult, user_feedback: str
     ) -> BlogResult:
         """
         Regenerate blog content incorporating user feedback.
@@ -591,7 +596,9 @@ class BlogWriterOrchestrator:
             outline = self.agent_state.get_workflow_data("outline")
             if not outline:
                 # If no outline, we need to extract topic and recreate
-                raise BlogGenerationError("Original outline not available for regeneration")
+                raise BlogGenerationError(
+                    "Original outline not available for regeneration"
+                )
 
             # Create blog content from original result
             original_content = BlogContent(
@@ -599,27 +606,27 @@ class BlogWriterOrchestrator:
                 content=original_result.content,
                 sections=original_result.metadata.get("sections", []),
                 code_blocks=[],  # Simplified - in practice you'd extract these properly
-                metadata=None  # Simplified
+                metadata=None,  # Simplified
             )
 
             # Use critic to provide structured feedback
-            feedback_analysis = await self.critic.review_content(original_content, outline)
+            feedback_analysis = await self.critic.review_content(
+                original_content, outline
+            )
 
             # Combine user feedback with critic feedback
             combined_feedback = f"User Feedback: {user_feedback}\\n\\n"
-            combined_feedback += f"Current Issues: {', '.join(feedback_analysis.improvements)}"
+            combined_feedback += (
+                f"Current Issues: {', '.join(feedback_analysis.improvements)}"
+            )
 
             # Revise content based on combined feedback
             blog_input = BlogInput(
-                topic=original_content.title,
-                description=user_feedback
+                topic=original_content.title, description=user_feedback
             )
 
             revised_content = await self.writer.revise_content(
-                original_content,
-                combined_feedback,
-                outline,
-                blog_input
+                original_content, combined_feedback, outline, blog_input
             )
 
             # Create result
@@ -628,10 +635,10 @@ class BlogWriterOrchestrator:
                 metadata={
                     "title": revised_content.title,
                     "regenerated": True,
-                    "user_feedback_incorporated": True
+                    "user_feedback_incorporated": True,
                 },
                 generation_log=self.agent_state.conversation_history,
-                success=True
+                success=True,
             )
 
             self.logger.info("Content regeneration completed successfully")
@@ -644,5 +651,5 @@ class BlogWriterOrchestrator:
                 metadata={"regeneration_failed": True},
                 generation_log=self.agent_state.conversation_history,
                 success=False,
-                error_message=str(e)
+                error_message=str(e),
             )

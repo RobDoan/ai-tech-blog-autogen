@@ -2,6 +2,7 @@
 File-based storage system to replace database functionality.
 Exports data to JSON and CSV files for easy access and portability.
 """
+
 import csv
 import json
 from datetime import datetime
@@ -29,12 +30,11 @@ class FileStorage:
         filepath = self.base_path / "blog_posts" / filename
 
         # Add metadata
-        blog_post_data.update({
-            "created_at": datetime.now().isoformat(),
-            "file_id": filename
-        })
+        blog_post_data.update(
+            {"created_at": datetime.now().isoformat(), "file_id": filename}
+        )
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(blog_post_data, f, indent=2, ensure_ascii=False)
 
         return str(filepath)
@@ -47,18 +47,20 @@ class FileStorage:
         json_filename = f"trending_topics_{timestamp}.json"
         json_filepath = self.base_path / "trending_topics" / json_filename
 
-        with open(json_filepath, 'w', encoding='utf-8') as f:
-            json.dump({
-                "timestamp": datetime.now().isoformat(),
-                "topics": topics_data
-            }, f, indent=2, ensure_ascii=False)
+        with open(json_filepath, "w", encoding="utf-8") as f:
+            json.dump(
+                {"timestamp": datetime.now().isoformat(), "topics": topics_data},
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
 
         # Save as CSV
         csv_filename = f"trending_topics_{timestamp}.csv"
         csv_filepath = self.base_path / "trending_topics" / csv_filename
 
         if topics_data:
-            with open(csv_filepath, 'w', newline='', encoding='utf-8') as f:
+            with open(csv_filepath, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=topics_data[0].keys())
                 writer.writeheader()
                 writer.writerows(topics_data)
@@ -72,12 +74,11 @@ class FileStorage:
         filepath = self.base_path / "content_generations" / filename
 
         # Add metadata
-        generation_data.update({
-            "created_at": datetime.now().isoformat(),
-            "file_id": filename
-        })
+        generation_data.update(
+            {"created_at": datetime.now().isoformat(), "file_id": filename}
+        )
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(generation_data, f, indent=2, ensure_ascii=False)
 
         return str(filepath)
@@ -97,7 +98,7 @@ class FileStorage:
 
         for filepath in json_files:
             try:
-                with open(filepath, encoding='utf-8') as f:
+                with open(filepath, encoding="utf-8") as f:
                     blog_posts.append(json.load(f))
             except (OSError, json.JSONDecodeError):
                 continue
@@ -119,10 +120,10 @@ class FileStorage:
 
         for filepath in json_files:
             try:
-                with open(filepath, encoding='utf-8') as f:
+                with open(filepath, encoding="utf-8") as f:
                     data = json.load(f)
-                    if 'topics' in data:
-                        all_topics.extend(data['topics'])
+                    if "topics" in data:
+                        all_topics.extend(data["topics"])
             except (OSError, json.JSONDecodeError):
                 continue
 
@@ -145,7 +146,7 @@ class FileStorage:
         if not data:
             return output_path
 
-        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+        with open(output_path, "w", newline="", encoding="utf-8") as f:
             # Flatten nested dictionaries for CSV export
             flattened_data = []
             for item in data:
@@ -159,7 +160,7 @@ class FileStorage:
 
         return output_path
 
-    def _flatten_dict(self, d: dict, parent_key: str = '', sep: str = '_') -> dict:
+    def _flatten_dict(self, d: dict, parent_key: str = "", sep: str = "_") -> dict:
         """Flatten nested dictionary for CSV export"""
         items = []
         for k, v in d.items():

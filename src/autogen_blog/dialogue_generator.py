@@ -24,16 +24,19 @@ from .persona_system import (
 
 class DialogueGenerationError(BlogGenerationError):
     """Raised when dialogue generation fails."""
+
     pass
 
 
 class DialogueFlowError(DialogueGenerationError):
     """Raised when dialogue flow is invalid."""
+
     pass
 
 
 class ConversationType(str, Enum):
     """Types of conversational structures."""
+
     PROBLEM_SOLUTION = "problem_solution"
     TUTORIAL_WALKTHROUGH = "tutorial_walkthrough"
     CONCEPT_EXPLORATION = "concept_exploration"
@@ -45,6 +48,7 @@ class ConversationType(str, Enum):
 @dataclass
 class ConversationContext:
     """Context information for dialogue generation."""
+
     main_topic: str
     technical_concepts: list[str] = field(default_factory=list)
     target_audience_level: str = "intermediate"
@@ -57,6 +61,7 @@ class ConversationContext:
 @dataclass
 class DialogueFlow:
     """Represents the flow structure of a conversation."""
+
     introduction_exchanges: int = 2
     main_discussion_exchanges: int = 8
     example_exchanges: int = 4
@@ -73,39 +78,41 @@ class ConversationFlowManager:
 
         # Default transition phrases
         self.transition_phrases = {
-            'topic_change': [
+            "topic_change": [
                 "Speaking of that, let me ask about",
                 "That brings up another point",
                 "Building on that idea",
-                "Another thing to consider is"
+                "Another thing to consider is",
             ],
-            'example_introduction': [
+            "example_introduction": [
                 "Let me show you a practical example",
                 "Here's how that would look in practice",
                 "To illustrate this concept",
-                "For instance"
+                "For instance",
             ],
-            'problem_to_solution': [
+            "problem_to_solution": [
                 "That's a common challenge. Here's how I approach it",
                 "I've seen this before. The solution is",
                 "Good question. Let me walk you through",
-                "There's actually a straightforward way to handle this"
+                "There's actually a straightforward way to handle this",
             ],
-            'agreement': [
+            "agreement": [
                 "Exactly! And to add to that",
                 "That's right, and",
                 "Absolutely. Another benefit is",
-                "Good point. Also"
+                "Good point. Also",
             ],
-            'clarification': [
+            "clarification": [
                 "Just to clarify",
                 "Let me make sure I understand",
                 "What you're describing sounds like",
-                "If I'm following correctly"
-            ]
+                "If I'm following correctly",
+            ],
         }
 
-    def create_flow_plan(self, outline: ContentOutline, context: ConversationContext) -> DialogueFlow:
+    def create_flow_plan(
+        self, outline: ContentOutline, context: ConversationContext
+    ) -> DialogueFlow:
         """Create a dialogue flow plan based on content outline."""
         total_sections = len(outline.sections)
         estimated_exchanges = max(12, total_sections * 3)  # Minimum 12 exchanges
@@ -114,14 +121,19 @@ class ConversationFlowManager:
         intro_exchanges = min(3, max(1, estimated_exchanges // 8))
         conclusion_exchanges = min(3, max(1, estimated_exchanges // 8))
         example_exchanges = min(6, max(2, estimated_exchanges // 4))
-        main_exchanges = estimated_exchanges - intro_exchanges - conclusion_exchanges - example_exchanges
+        main_exchanges = (
+            estimated_exchanges
+            - intro_exchanges
+            - conclusion_exchanges
+            - example_exchanges
+        )
 
         return DialogueFlow(
             introduction_exchanges=intro_exchanges,
             main_discussion_exchanges=main_exchanges,
             example_exchanges=example_exchanges,
             conclusion_exchanges=conclusion_exchanges,
-            transition_phrases=self._select_transition_phrases(context)
+            transition_phrases=self._select_transition_phrases(context),
         )
 
     def _select_transition_phrases(self, context: ConversationContext) -> list[str]:
@@ -130,14 +142,16 @@ class ConversationFlowManager:
 
         # Add phrases based on conversation goals
         if "problem_solving" in str(context.conversation_goals):
-            phrases.extend(self.transition_phrases['problem_to_solution'][:2])
+            phrases.extend(self.transition_phrases["problem_to_solution"][:2])
 
-        phrases.extend(self.transition_phrases['topic_change'][:2])
-        phrases.extend(self.transition_phrases['example_introduction'][:1])
+        phrases.extend(self.transition_phrases["topic_change"][:2])
+        phrases.extend(self.transition_phrases["example_introduction"][:1])
 
         return phrases
 
-    def validate_flow(self, exchanges: list[DialogueExchange]) -> tuple[bool, list[str]]:
+    def validate_flow(
+        self, exchanges: list[DialogueExchange]
+    ) -> tuple[bool, list[str]]:
         """Validate that dialogue follows good conversation flow."""
         issues = []
 
@@ -152,18 +166,22 @@ class ConversationFlowManager:
             if exchange.speaker == current_speaker:
                 consecutive_count += 1
                 if consecutive_count > 3:
-                    issues.append(f"Too many consecutive exchanges by {exchange.speaker}")
+                    issues.append(
+                        f"Too many consecutive exchanges by {exchange.speaker}"
+                    )
                     break
             else:
                 consecutive_count = 1
                 current_speaker = exchange.speaker
 
         # Check for natural conversation patterns
-        question_count = sum(1 for ex in exchanges if '?' in ex.content)
+        question_count = sum(1 for ex in exchanges if "?" in ex.content)
         if question_count == 0:
             issues.append("No questions found - conversation lacks natural inquiry")
         elif question_count > len(exchanges) // 2:
-            issues.append("Too many questions - balance with statements and explanations")
+            issues.append(
+                "Too many questions - balance with statements and explanations"
+            )
 
         return len(issues) == 0, issues
 
@@ -178,41 +196,47 @@ class TechnicalContextualizer:
         self,
         topic: str,
         technical_details: list[TechnicalDetail],
-        target_level: str = "intermediate"
+        target_level: str = "intermediate",
     ) -> dict[str, Any]:
         """Create technical context for conversation."""
         relevant_details = [
-            detail for detail in technical_details
-            if topic.lower() in detail.concept.lower() or
-               any(topic.lower() in tech.lower() for tech in detail.related_technologies)
+            detail
+            for detail in technical_details
+            if topic.lower() in detail.concept.lower()
+            or any(
+                topic.lower() in tech.lower() for tech in detail.related_technologies
+            )
         ]
 
         context = {
-            'main_concept': topic,
-            'complexity_level': target_level,
-            'key_points': [],
-            'common_pitfalls': [],
-            'best_practices': [],
-            'code_examples': [],
-            'related_concepts': set()
+            "main_concept": topic,
+            "complexity_level": target_level,
+            "key_points": [],
+            "common_pitfalls": [],
+            "best_practices": [],
+            "code_examples": [],
+            "related_concepts": set(),
         }
 
         for detail in relevant_details[:5]:  # Limit to top 5 relevant details
-            context['key_points'].append(detail.description)
-            context['related_concepts'].update(detail.related_technologies)
+            context["key_points"].append(detail.description)
+            context["related_concepts"].update(detail.related_technologies)
 
             # Extract best practices from use cases
             if detail.use_cases:
-                context['best_practices'].extend(detail.use_cases[:2])
+                context["best_practices"].extend(detail.use_cases[:2])
 
         return context
 
-    def generate_technical_examples(self, concept: str, code_examples: list[CodeExample]) -> list[str]:
+    def generate_technical_examples(
+        self, concept: str, code_examples: list[CodeExample]
+    ) -> list[str]:
         """Generate technical examples for a concept."""
         relevant_examples = [
-            example for example in code_examples
-            if concept.lower() in example.technical_concepts or
-               concept.lower() in example.explanation.lower()
+            example
+            for example in code_examples
+            if concept.lower() in example.technical_concepts
+            or concept.lower() in example.explanation.lower()
         ]
 
         example_texts = []
@@ -222,13 +246,15 @@ class TechnicalContextualizer:
 
         return example_texts
 
-    def validate_technical_accuracy(self, content: str, context: dict[str, Any]) -> list[str]:
+    def validate_technical_accuracy(
+        self, content: str, context: dict[str, Any]
+    ) -> list[str]:
         """Validate technical accuracy of content."""
         issues = []
 
         # Check if technical concepts are mentioned appropriately
-        mentioned_concepts = set(re.findall(r'\b\w+\b', content.lower()))
-        expected_concepts = context.get('related_concepts', set())
+        mentioned_concepts = set(re.findall(r"\b\w+\b", content.lower()))
+        expected_concepts = context.get("related_concepts", set())
 
         # Ensure some technical depth
         if len(mentioned_concepts.intersection(expected_concepts)) == 0:
@@ -251,7 +277,7 @@ class DialogueGenerator:
         outline: ContentOutline,
         blog_input: BlogInput,
         synthesized_knowledge: SynthesizedKnowledge,
-        personas: tuple[ProblemPresenter, SolutionProvider]
+        personas: tuple[ProblemPresenter, SolutionProvider],
     ) -> list[DialogueSection]:
         """
         Generate dialogue sections based on content outline and knowledge.
@@ -307,22 +333,28 @@ class DialogueGenerator:
         self,
         outline: ContentOutline,
         blog_input: BlogInput,
-        synthesized_knowledge: SynthesizedKnowledge
+        synthesized_knowledge: SynthesizedKnowledge,
     ) -> ConversationContext:
         """Create context for conversation generation."""
         return ConversationContext(
             main_topic=outline.title,
-            technical_concepts=[concept for concept in synthesized_knowledge.original_knowledge.technical_concepts][:10],
+            technical_concepts=[
+                concept
+                for concept in synthesized_knowledge.original_knowledge.technical_concepts
+            ][:10],
             target_audience_level=blog_input.target_audience.value,
             conversation_goals=[
                 "Explore practical development challenges",
                 "Provide actionable solutions",
                 "Share real-world examples",
-                "Discuss best practices"
+                "Discuss best practices",
             ],
             available_examples=synthesized_knowledge.code_examples,
-            key_insights=[insight.content for insight in synthesized_knowledge.original_knowledge.insights][:8],
-            problem_solution_pairs=synthesized_knowledge.problem_solution_pairs
+            key_insights=[
+                insight.content
+                for insight in synthesized_knowledge.original_knowledge.insights
+            ][:8],
+            problem_solution_pairs=synthesized_knowledge.problem_solution_pairs,
         )
 
     async def _generate_introduction_section(
@@ -330,7 +362,7 @@ class DialogueGenerator:
         outline: ContentOutline,
         context: ConversationContext,
         personas: tuple[ProblemPresenter, SolutionProvider],
-        flow_plan: DialogueFlow
+        flow_plan: DialogueFlow,
     ) -> DialogueSection:
         """Generate introduction dialogue section."""
         problem_presenter, solution_provider = personas
@@ -340,32 +372,36 @@ class DialogueGenerator:
         # Problem presenter introduces the topic
         intro_content = f"I've been working with {context.main_topic} recently, and I'm curious about best practices. What would you say are the key things developers should know?"
 
-        exchanges.append(DialogueExchange(
-            speaker=problem_presenter.profile.name,
-            content=intro_content,
-            intent="question",
-            technical_concepts=[context.main_topic.lower()],
-            confidence_level=0.8
-        ))
+        exchanges.append(
+            DialogueExchange(
+                speaker=problem_presenter.profile.name,
+                content=intro_content,
+                intent="question",
+                technical_concepts=[context.main_topic.lower()],
+                confidence_level=0.8,
+            )
+        )
 
         # Solution provider responds with overview
         overview_concepts = context.technical_concepts[:3]
         response_content = f"That's a great question! When it comes to {context.main_topic}, there are several important aspects to consider. The main areas I'd focus on are {', '.join(overview_concepts[:2])}. Let's dive into the practical challenges and solutions."
 
-        exchanges.append(DialogueExchange(
-            speaker=solution_provider.profile.name,
-            content=response_content,
-            intent="explanation",
-            technical_concepts=overview_concepts,
-            confidence_level=0.9
-        ))
+        exchanges.append(
+            DialogueExchange(
+                speaker=solution_provider.profile.name,
+                content=response_content,
+                intent="explanation",
+                technical_concepts=overview_concepts,
+                confidence_level=0.9,
+            )
+        )
 
         return DialogueSection(
             section_title="Introduction",
             exchanges=exchanges,
             technical_focus=context.main_topic,
             learning_objective="Set context and establish conversation flow",
-            section_type="introduction"
+            section_type="introduction",
         )
 
     async def _generate_content_section(
@@ -373,7 +409,7 @@ class DialogueGenerator:
         content_section,
         context: ConversationContext,
         personas: tuple[ProblemPresenter, SolutionProvider],
-        is_last_section: bool
+        is_last_section: bool,
     ) -> DialogueSection:
         """Generate dialogue for a main content section."""
         problem_presenter, solution_provider = personas
@@ -386,7 +422,7 @@ class DialogueGenerator:
         tech_context = self.contextualizer.contextualize_technical_discussion(
             section_title,
             [],  # We'll pass actual technical details when available
-            context.target_audience_level
+            context.target_audience_level,
         )
 
         # Problem presenter asks about or presents challenge related to section
@@ -394,17 +430,19 @@ class DialogueGenerator:
             f"When working with {section_title}, what are the main challenges you encounter?",
             f"I've been struggling with {section_title}. What's your approach?",
             f"Can you walk me through best practices for {section_title}?",
-            f"What are common mistakes people make with {section_title}?"
+            f"What are common mistakes people make with {section_title}?",
         ]
 
         problem_content = random.choice(problem_patterns)
-        exchanges.append(DialogueExchange(
-            speaker=problem_presenter.profile.name,
-            content=problem_content,
-            intent="question",
-            technical_concepts=[section_title.lower()],
-            confidence_level=0.7
-        ))
+        exchanges.append(
+            DialogueExchange(
+                speaker=problem_presenter.profile.name,
+                content=problem_content,
+                intent="question",
+                technical_concepts=[section_title.lower()],
+                confidence_level=0.7,
+            )
+        )
 
         # Solution provider addresses the key points
         solution_content = f"Good question! With {section_title}, the key things to keep in mind are:\n\n"
@@ -415,51 +453,56 @@ class DialogueGenerator:
         if context.available_examples:
             solution_content += "\nLet me show you how this looks in practice."
 
-        exchanges.append(DialogueExchange(
-            speaker=solution_provider.profile.name,
-            content=solution_content,
-            intent="explanation",
-            technical_concepts=[section_title.lower()] + [point.lower() for point in key_points[:2]],
-            confidence_level=0.9
-        ))
+        exchanges.append(
+            DialogueExchange(
+                speaker=solution_provider.profile.name,
+                content=solution_content,
+                intent="explanation",
+                technical_concepts=[section_title.lower()]
+                + [point.lower() for point in key_points[:2]],
+                confidence_level=0.9,
+            )
+        )
 
         # Add code example if available and needed
         if content_section.code_examples_needed and context.available_examples:
             example_exchange = self._generate_code_example_exchange(
-                section_title, context.available_examples, solution_provider.profile.name
+                section_title,
+                context.available_examples,
+                solution_provider.profile.name,
             )
             if example_exchange:
                 exchanges.append(example_exchange)
 
                 # Problem presenter follow-up
                 followup_content = "That's really helpful! Are there any edge cases or performance considerations I should be aware of?"
-                exchanges.append(DialogueExchange(
-                    speaker=problem_presenter.profile.name,
-                    content=followup_content,
-                    intent="question",
-                    technical_concepts=[],
-                    confidence_level=0.8
-                ))
+                exchanges.append(
+                    DialogueExchange(
+                        speaker=problem_presenter.profile.name,
+                        content=followup_content,
+                        intent="question",
+                        technical_concepts=[],
+                        confidence_level=0.8,
+                    )
+                )
 
         return DialogueSection(
             section_title=section_title,
             exchanges=exchanges,
             technical_focus=section_title,
             learning_objective=f"Understand {section_title} concepts and best practices",
-            section_type="discussion"
+            section_type="discussion",
         )
 
     def _generate_code_example_exchange(
-        self,
-        topic: str,
-        code_examples: list[CodeExample],
-        speaker_name: str
+        self, topic: str, code_examples: list[CodeExample], speaker_name: str
     ) -> DialogueExchange | None:
         """Generate an exchange with a code example."""
         relevant_examples = [
-            ex for ex in code_examples
-            if topic.lower() in ex.explanation.lower() or
-               any(topic.lower() in concept for concept in ex.technical_concepts)
+            ex
+            for ex in code_examples
+            if topic.lower() in ex.explanation.lower()
+            or any(topic.lower() in concept for concept in ex.technical_concepts)
         ]
 
         if not relevant_examples:
@@ -474,7 +517,7 @@ class DialogueGenerator:
             content=content,
             intent="example",
             technical_concepts=example.technical_concepts,
-            confidence_level=0.9
+            confidence_level=0.9,
         )
 
     async def _generate_conclusion_section(
@@ -482,7 +525,7 @@ class DialogueGenerator:
         outline: ContentOutline,
         context: ConversationContext,
         personas: tuple[ProblemPresenter, SolutionProvider],
-        flow_plan: DialogueFlow
+        flow_plan: DialogueFlow,
     ) -> DialogueSection:
         """Generate conclusion dialogue section."""
         problem_presenter, solution_provider = personas
@@ -491,31 +534,35 @@ class DialogueGenerator:
         # Problem presenter summarizes learning
         summary_content = f"This has been really insightful! To summarize, the key takeaways for {context.main_topic} are the importance of {', '.join(context.technical_concepts[:2])}. What would be your top recommendation for someone just getting started?"
 
-        exchanges.append(DialogueExchange(
-            speaker=problem_presenter.profile.name,
-            content=summary_content,
-            intent="summary",
-            technical_concepts=context.technical_concepts[:2],
-            confidence_level=0.8
-        ))
+        exchanges.append(
+            DialogueExchange(
+                speaker=problem_presenter.profile.name,
+                content=summary_content,
+                intent="summary",
+                technical_concepts=context.technical_concepts[:2],
+                confidence_level=0.8,
+            )
+        )
 
         # Solution provider provides final advice
         advice_content = "Great summary! My top recommendation would be to start with the fundamentals and practice regularly. Focus on understanding the core concepts before moving to advanced topics. And remember, every expert was once a beginner - keep experimenting and learning!"
 
-        exchanges.append(DialogueExchange(
-            speaker=solution_provider.profile.name,
-            content=advice_content,
-            intent="advice",
-            technical_concepts=[],
-            confidence_level=0.9
-        ))
+        exchanges.append(
+            DialogueExchange(
+                speaker=solution_provider.profile.name,
+                content=advice_content,
+                intent="advice",
+                technical_concepts=[],
+                confidence_level=0.9,
+            )
+        )
 
         return DialogueSection(
             section_title="Conclusion",
             exchanges=exchanges,
             technical_focus="general advice",
             learning_objective="Reinforce key points and provide next steps",
-            section_type="conclusion"
+            section_type="conclusion",
         )
 
     async def format_dialogue_as_markdown(self, sections: list[DialogueSection]) -> str:
@@ -553,7 +600,7 @@ class DialogueGenerator:
     async def validate_generated_dialogue(
         self,
         sections: list[DialogueSection],
-        personas: tuple[ProblemPresenter, SolutionProvider]
+        personas: tuple[ProblemPresenter, SolutionProvider],
     ) -> tuple[bool, list[str]]:
         """Validate the generated dialogue for quality and consistency."""
         all_exchanges = []
@@ -584,7 +631,9 @@ class DialogueGenerator:
         # Check conversation balance
         speaker_counts = {}
         for exchange in all_exchanges:
-            speaker_counts[exchange.speaker] = speaker_counts.get(exchange.speaker, 0) + 1
+            speaker_counts[exchange.speaker] = (
+                speaker_counts.get(exchange.speaker, 0) + 1
+            )
 
         if len(speaker_counts) == 2:
             counts = list(speaker_counts.values())

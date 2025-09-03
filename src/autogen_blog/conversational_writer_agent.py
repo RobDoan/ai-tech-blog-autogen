@@ -34,11 +34,22 @@ from .writer_agent import WriterAgent
 
 class ConversationalBlogContent(BlogContent):
     """Extended blog content with conversational metadata."""
-    dialogue_sections: list[DialogueSection] = Field(default_factory=list, description="Generated dialogue sections")
-    personas_used: tuple[str, str] | None = Field(None, description="Names of personas used in the conversation")
-    research_sources: list[str] = Field(default_factory=list, description="List of research sources referenced")
-    conversation_flow_score: float = Field(0.0, description="Quality score for conversation flow", ge=0.0, le=10.0)
-    synthesis_confidence: float = Field(0.0, description="Confidence in knowledge synthesis", ge=0.0, le=1.0)
+
+    dialogue_sections: list[DialogueSection] = Field(
+        default_factory=list, description="Generated dialogue sections"
+    )
+    personas_used: tuple[str, str] | None = Field(
+        None, description="Names of personas used in the conversation"
+    )
+    research_sources: list[str] = Field(
+        default_factory=list, description="List of research sources referenced"
+    )
+    conversation_flow_score: float = Field(
+        0.0, description="Quality score for conversation flow", ge=0.0, le=10.0
+    )
+    synthesis_confidence: float = Field(
+        0.0, description="Confidence in knowledge synthesis", ge=0.0, le=1.0
+    )
 
 
 class ConversationalWriterAgent(WriterAgent):
@@ -108,7 +119,7 @@ Focus on creating conversations that feel authentic while delivering valuable te
         blog_input: BlogInput,
         research_knowledge: SynthesizedKnowledge | None = None,
         personas: tuple[ProblemPresenter, SolutionProvider] | None = None,
-        persona_config: PersonaConfig | None = None
+        persona_config: PersonaConfig | None = None,
     ) -> ConversationalBlogContent:
         """
         Generate conversational blog content using personas and research.
@@ -127,7 +138,9 @@ Focus on creating conversations that feel authentic while delivering valuable te
             ContentQualityError: If content generation fails
         """
         try:
-            self.logger.info(f"Starting conversational content generation for: {outline.title}")
+            self.logger.info(
+                f"Starting conversational content generation for: {outline.title}"
+            )
 
             # Set up personas if not provided
             if personas is None or persona_config is None:
@@ -139,14 +152,21 @@ Focus on creating conversations that feel authentic while delivering valuable te
             self._current_knowledge = research_knowledge
 
             # Generate dialogue sections
-            dialogue_sections = await self.dialogue_generator.generate_dialogue_sections(
-                outline, blog_input, research_knowledge or SynthesizedKnowledge(
-                    original_knowledge=KnowledgeBase()
-                ), personas
+            dialogue_sections = (
+                await self.dialogue_generator.generate_dialogue_sections(
+                    outline,
+                    blog_input,
+                    research_knowledge
+                    or SynthesizedKnowledge(original_knowledge=KnowledgeBase()),
+                    personas,
+                )
             )
 
             # Validate dialogue quality
-            is_valid, validation_issues = await self.dialogue_generator.validate_generated_dialogue(
+            (
+                is_valid,
+                validation_issues,
+            ) = await self.dialogue_generator.validate_generated_dialogue(
                 dialogue_sections, personas
             )
 
@@ -155,8 +175,10 @@ Focus on creating conversations that feel authentic while delivering valuable te
                 # Continue but log the issues
 
             # Format dialogue as markdown
-            conversational_content = await self.dialogue_generator.format_dialogue_as_markdown(
-                dialogue_sections
+            conversational_content = (
+                await self.dialogue_generator.format_dialogue_as_markdown(
+                    dialogue_sections
+                )
             )
 
             # Add title and structure
@@ -165,7 +187,9 @@ Focus on creating conversations that feel authentic while delivering valuable te
             )
 
             # Calculate metadata
-            metadata = self._calculate_conversational_metadata(formatted_content, dialogue_sections)
+            metadata = self._calculate_conversational_metadata(
+                formatted_content, dialogue_sections
+            )
 
             # Create conversational blog content
             blog_content = ConversationalBlogContent(
@@ -176,15 +200,23 @@ Focus on creating conversations that feel authentic while delivering valuable te
                 metadata=metadata,
                 dialogue_sections=dialogue_sections,
                 personas_used=(personas[0].profile.name, personas[1].profile.name),
-                research_sources=research_knowledge.original_knowledge.references if research_knowledge else [],
+                research_sources=research_knowledge.original_knowledge.references
+                if research_knowledge
+                else [],
                 conversation_flow_score=self._calculate_flow_score(dialogue_sections),
-                synthesis_confidence=research_knowledge.synthesis_confidence if research_knowledge else 0.0
+                synthesis_confidence=research_knowledge.synthesis_confidence
+                if research_knowledge
+                else 0.0,
             )
 
             # Validate content quality
-            await self._validate_conversational_content(blog_content, outline, blog_input)
+            await self._validate_conversational_content(
+                blog_content, outline, blog_input
+            )
 
-            self.logger.info(f"Generated conversational content: {metadata.word_count} words, {len(dialogue_sections)} sections")
+            self.logger.info(
+                f"Generated conversational content: {metadata.word_count} words, {len(dialogue_sections)} sections"
+            )
             return blog_content
 
         except Exception as e:
@@ -195,7 +227,7 @@ Focus on creating conversations that feel authentic while delivering valuable te
         self,
         outline: ContentOutline,
         conversational_content: str,
-        blog_input: BlogInput
+        blog_input: BlogInput,
     ) -> str:
         """Format conversational content into a complete blog post."""
         formatted_parts = []
@@ -219,15 +251,15 @@ Focus on creating conversations that feel authentic while delivering valuable te
         formatted_parts.append(conversational_content)
 
         # Add conclusion context
-        conclusion_context = await self._generate_conversational_conclusion(outline, blog_input)
+        conclusion_context = await self._generate_conversational_conclusion(
+            outline, blog_input
+        )
         formatted_parts.append(conclusion_context)
 
         return "\n".join(formatted_parts)
 
     async def _generate_conversational_intro(
-        self,
-        outline: ContentOutline,
-        blog_input: BlogInput
+        self, outline: ContentOutline, blog_input: BlogInput
     ) -> str:
         """Generate an introduction that sets up the conversational format."""
         intro_prompt = f"""
@@ -241,7 +273,7 @@ The introduction should:
 
 Topic: {outline.title}
 Target Audience: {blog_input.target_audience.value}
-Additional Context: {blog_input.description or 'None'}
+Additional Context: {blog_input.description or "None"}
 
 Write a natural, engaging introduction that flows into the conversation format.
 """
@@ -262,16 +294,16 @@ Write a natural, engaging introduction that flows into the conversation format.
         intro_text += f"Specializes in {', '.join(problem_presenter.profile.expertise_areas[:2])}.\n\n"
 
         intro_text += f"**{solution_provider.profile.name}**: {solution_provider.profile.background}. "
-        intro_text += f"Expert in {', '.join(solution_provider.profile.expertise_areas[:2])}.\n\n"
+        intro_text += (
+            f"Expert in {', '.join(solution_provider.profile.expertise_areas[:2])}.\n\n"
+        )
 
         intro_text += "Let's listen in on their conversation:"
 
         return intro_text
 
     async def _generate_conversational_conclusion(
-        self,
-        outline: ContentOutline,
-        blog_input: BlogInput
+        self, outline: ContentOutline, blog_input: BlogInput
     ) -> str:
         """Generate a conclusion that wraps up the conversational format."""
         conclusion_prompt = f"""
@@ -293,9 +325,7 @@ Write a natural conclusion that provides closure to the conversational format.
         return self.clean_markdown_content(response.content)
 
     def _calculate_conversational_metadata(
-        self,
-        content: str,
-        dialogue_sections: list[DialogueSection]
+        self, content: str, dialogue_sections: list[DialogueSection]
     ) -> ContentMetadata:
         """Calculate metadata specific to conversational content."""
         # Base metadata from parent class
@@ -312,10 +342,9 @@ Write a natural conclusion that provides closure to the conversational format.
             word_count=base_metadata.word_count,
             reading_time_minutes=adjusted_reading_time,
             seo_score=base_metadata.seo_score,
-            keywords=base_metadata.keywords + [
-                "conversation", "dialogue", "discussion", "practical"
-            ],
-            meta_description=base_metadata.meta_description
+            keywords=base_metadata.keywords
+            + ["conversation", "dialogue", "discussion", "practical"],
+            meta_description=base_metadata.meta_description,
         )
 
     def _calculate_flow_score(self, dialogue_sections: list[DialogueSection]) -> float:
@@ -380,7 +409,7 @@ Write a natural conclusion that provides closure to the conversational format.
         self,
         content: ConversationalBlogContent,
         outline: ContentOutline,
-        blog_input: BlogInput
+        blog_input: BlogInput,
     ) -> None:
         """Validate conversational content meets quality standards."""
         # Use base validation first
@@ -388,10 +417,14 @@ Write a natural conclusion that provides closure to the conversational format.
 
         # Additional conversational validation
         if not content.dialogue_sections:
-            raise ContentQualityError("No dialogue sections found in conversational content")
+            raise ContentQualityError(
+                "No dialogue sections found in conversational content"
+            )
 
         if len(content.dialogue_sections) < 2:
-            raise ContentQualityError("Conversational content needs at least 2 dialogue sections")
+            raise ContentQualityError(
+                "Conversational content needs at least 2 dialogue sections"
+            )
 
         # Check for persona balance
         if content.personas_used:
@@ -400,16 +433,24 @@ Write a natural conclusion that provides closure to the conversational format.
             persona2_count = content.content.count(f"**{persona2}:**")
 
             if persona1_count == 0 or persona2_count == 0:
-                raise ContentQualityError("Both personas must participate in the conversation")
+                raise ContentQualityError(
+                    "Both personas must participate in the conversation"
+                )
 
             # Check for reasonable balance (not more than 3:1 ratio)
-            ratio = max(persona1_count, persona2_count) / max(min(persona1_count, persona2_count), 1)
+            ratio = max(persona1_count, persona2_count) / max(
+                min(persona1_count, persona2_count), 1
+            )
             if ratio > 3.0:
-                raise ContentQualityError("Conversation is too imbalanced between personas")
+                raise ContentQualityError(
+                    "Conversation is too imbalanced between personas"
+                )
 
         # Check conversation flow score
         if content.conversation_flow_score < 0.4:
-            raise ContentQualityError(f"Conversation flow quality too low: {content.conversation_flow_score:.2f}")
+            raise ContentQualityError(
+                f"Conversation flow quality too low: {content.conversation_flow_score:.2f}"
+            )
 
         self.logger.info("Conversational content validation passed")
 
@@ -418,7 +459,7 @@ Write a natural conclusion that provides closure to the conversational format.
         current_content: ConversationalBlogContent,
         feedback: str,
         outline: ContentOutline,
-        blog_input: BlogInput
+        blog_input: BlogInput,
     ) -> ConversationalBlogContent:
         """
         Revise conversational content based on feedback.
@@ -453,16 +494,20 @@ Write a natural conclusion that provides closure to the conversational format.
                 title=current_content.title,
                 content=revised_content_text,
                 sections=self._extract_sections_from_content(revised_content_text),
-                code_blocks=self._extract_code_blocks_from_content(revised_content_text),
+                code_blocks=self._extract_code_blocks_from_content(
+                    revised_content_text
+                ),
                 metadata=revised_metadata,
                 dialogue_sections=current_content.dialogue_sections,
                 personas_used=current_content.personas_used,
                 research_sources=current_content.research_sources,
                 conversation_flow_score=current_content.conversation_flow_score,
-                synthesis_confidence=current_content.synthesis_confidence
+                synthesis_confidence=current_content.synthesis_confidence,
             )
 
-            self.logger.info(f"Revised conversational content: {revised_metadata.word_count} words")
+            self.logger.info(
+                f"Revised conversational content: {revised_metadata.word_count} words"
+            )
             return revised_content
 
         except Exception as e:
@@ -474,7 +519,7 @@ Write a natural conclusion that provides closure to the conversational format.
         current_content: ConversationalBlogContent,
         feedback: str,
         outline: ContentOutline,
-        blog_input: BlogInput
+        blog_input: BlogInput,
     ) -> str:
         """Build prompt for revising conversational content."""
         persona_info = ""
@@ -513,8 +558,7 @@ Please provide the complete revised conversational blog post in markdown format,
 """
 
     async def analyze_conversational_structure(
-        self,
-        content: ConversationalBlogContent
+        self, content: ConversationalBlogContent
     ) -> dict[str, Any]:
         """
         Analyze the structure and quality of conversational content.
@@ -531,13 +575,15 @@ Please provide the complete revised conversational blog post in markdown format,
         # Add conversational-specific analysis
         conversational_analysis = {
             "dialogue_sections_count": len(content.dialogue_sections),
-            "total_exchanges": sum(len(section.exchanges) for section in content.dialogue_sections),
+            "total_exchanges": sum(
+                len(section.exchanges) for section in content.dialogue_sections
+            ),
             "conversation_flow_score": content.conversation_flow_score,
             "persona_balance": {},
             "technical_concept_coverage": 0,
             "intent_variety": set(),
             "conversational_strengths": [],
-            "conversational_recommendations": []
+            "conversational_recommendations": [],
         }
 
         if content.dialogue_sections:
@@ -548,13 +594,18 @@ Please provide the complete revised conversational blog post in markdown format,
             # Analyze persona balance
             if content.personas_used:
                 persona1, persona2 = content.personas_used
-                persona1_count = sum(1 for ex in all_exchanges if ex.speaker == persona1)
-                persona2_count = sum(1 for ex in all_exchanges if ex.speaker == persona2)
+                persona1_count = sum(
+                    1 for ex in all_exchanges if ex.speaker == persona1
+                )
+                persona2_count = sum(
+                    1 for ex in all_exchanges if ex.speaker == persona2
+                )
 
                 conversational_analysis["persona_balance"] = {
                     persona1: persona1_count,
                     persona2: persona2_count,
-                    "balance_ratio": max(persona1_count, persona2_count) / max(min(persona1_count, persona2_count), 1)
+                    "balance_ratio": max(persona1_count, persona2_count)
+                    / max(min(persona1_count, persona2_count), 1),
                 }
 
             # Technical concept coverage
@@ -564,17 +615,25 @@ Please provide the complete revised conversational blog post in markdown format,
             conversational_analysis["technical_concept_coverage"] = len(all_concepts)
 
             # Intent variety
-            conversational_analysis["intent_variety"] = set(ex.intent for ex in all_exchanges)
+            conversational_analysis["intent_variety"] = set(
+                ex.intent for ex in all_exchanges
+            )
 
         # Conversational strengths
         if conversational_analysis["conversation_flow_score"] >= 0.8:
-            conversational_analysis["conversational_strengths"].append("Excellent conversation flow")
+            conversational_analysis["conversational_strengths"].append(
+                "Excellent conversation flow"
+            )
 
         if conversational_analysis["technical_concept_coverage"] >= 5:
-            conversational_analysis["conversational_strengths"].append("Rich technical content")
+            conversational_analysis["conversational_strengths"].append(
+                "Rich technical content"
+            )
 
         if len(conversational_analysis["intent_variety"]) >= 4:
-            conversational_analysis["conversational_strengths"].append("Good variety in conversation intents")
+            conversational_analysis["conversational_strengths"].append(
+                "Good variety in conversation intents"
+            )
 
         # Conversational recommendations
         if conversational_analysis["persona_balance"].get("balance_ratio", 1) > 2:

@@ -23,7 +23,7 @@ from .multi_agent_models import (
 class ContentPlannerAgent(BaseAgent):
     """
     Agent responsible for creating structured blog outlines and content strategy.
-    
+
     Specializes in:
     - Analyzing topics and audience requirements
     - Creating comprehensive content outlines
@@ -70,13 +70,13 @@ Focus on creating outlines that will result in valuable, comprehensive, and enga
     async def create_outline(self, blog_input: BlogInput) -> ContentOutline:
         """
         Create a comprehensive blog outline based on input requirements.
-        
+
         Args:
             blog_input: Input data including topic, description, and requirements
-            
+
         Returns:
             ContentOutline with structured plan for the blog post
-            
+
         Raises:
             ContentQualityError: If outline generation fails or produces low-quality results
         """
@@ -85,15 +85,14 @@ Focus on creating outlines that will result in valuable, comprehensive, and enga
             prompt = self._build_outline_prompt(blog_input)
 
             # Query the agent
-            response = await self.query_agent(
-                prompt,
-                message_type=MessageType.OUTLINE
-            )
+            response = await self.query_agent(prompt, message_type=MessageType.OUTLINE)
 
             # Validate and parse the response
             outline = await self._parse_outline_response(response, blog_input)
 
-            self.logger.info(f"Created outline with {len(outline.sections)} sections for: {blog_input.topic}")
+            self.logger.info(
+                f"Created outline with {len(outline.sections)} sections for: {blog_input.topic}"
+            )
             return outline
 
         except Exception as e:
@@ -101,39 +100,37 @@ Focus on creating outlines that will result in valuable, comprehensive, and enga
             raise ContentQualityError(f"Outline creation failed: {e}")
 
     async def refine_outline(
-        self,
-        current_outline: ContentOutline,
-        feedback: str,
-        blog_input: BlogInput
+        self, current_outline: ContentOutline, feedback: str, blog_input: BlogInput
     ) -> ContentOutline:
         """
         Refine an existing outline based on feedback.
-        
+
         Args:
             current_outline: The existing outline to refine
             feedback: Feedback for improvement
             blog_input: Original input requirements
-            
+
         Returns:
             Refined ContentOutline
-            
+
         Raises:
             ContentQualityError: If refinement fails
         """
         try:
             # Build refinement prompt
-            prompt = self._build_refinement_prompt(current_outline, feedback, blog_input)
+            prompt = self._build_refinement_prompt(
+                current_outline, feedback, blog_input
+            )
 
             # Query the agent
-            response = await self.query_agent(
-                prompt,
-                message_type=MessageType.OUTLINE
-            )
+            response = await self.query_agent(prompt, message_type=MessageType.OUTLINE)
 
             # Parse the refined outline
             refined_outline = await self._parse_outline_response(response, blog_input)
 
-            self.logger.info(f"Refined outline based on feedback: {len(refined_outline.sections)} sections")
+            self.logger.info(
+                f"Refined outline based on feedback: {len(refined_outline.sections)} sections"
+            )
             return refined_outline
 
         except Exception as e:
@@ -199,10 +196,7 @@ Respond with a JSON object in this exact format:
 """
 
     def _build_refinement_prompt(
-        self,
-        current_outline: ContentOutline,
-        feedback: str,
-        blog_input: BlogInput
+        self, current_outline: ContentOutline, feedback: str, blog_input: BlogInput
     ) -> str:
         """Build the prompt for refining a blog outline based on feedback."""
         return f"""
@@ -216,7 +210,7 @@ Sections:
 {self._format_sections_for_prompt(current_outline.sections)}
 
 Conclusion: {current_outline.conclusion}
-Target Keywords: {', '.join(current_outline.target_keywords)}
+Target Keywords: {", ".join(current_outline.target_keywords)}
 
 Feedback to Address:
 {feedback}
@@ -225,7 +219,7 @@ Original Requirements:
 - Topic: {blog_input.topic}
 - Target Audience: {blog_input.target_audience.value}
 - Preferred Length: {blog_input.preferred_length} words
-- Additional Context: {blog_input.description or 'None'}
+- Additional Context: {blog_input.description or "None"}
 
 Please provide a refined outline that addresses the feedback while maintaining the overall structure and quality. Respond with the same JSON format as before:
 
@@ -267,20 +261,18 @@ Please provide a refined outline that addresses the feedback while maintaining t
         return "\\n\\n".join(formatted)
 
     async def _parse_outline_response(
-        self,
-        response: AgentMessage,
-        blog_input: BlogInput
+        self, response: AgentMessage, blog_input: BlogInput
     ) -> ContentOutline:
         """
         Parse the agent's response into a ContentOutline object.
-        
+
         Args:
             response: Response from the agent
             blog_input: Original input for validation
-            
+
         Returns:
             ContentOutline object
-            
+
         Raises:
             ContentQualityError: If parsing fails or outline is invalid
         """
@@ -302,13 +294,17 @@ Please provide a refined outline that addresses the feedback while maintaining t
                 section = Section(
                     heading=section_data.get("heading", "Untitled Section"),
                     key_points=section_data.get("key_points", []),
-                    code_examples_needed=section_data.get("code_examples_needed", False),
-                    estimated_words=section_data.get("estimated_words", 200)
+                    code_examples_needed=section_data.get(
+                        "code_examples_needed", False
+                    ),
+                    estimated_words=section_data.get("estimated_words", 200),
                 )
                 sections.append(section)
 
             # Calculate total word count
-            total_estimated = sum(s.estimated_words for s in sections) + 200  # Add intro/conclusion
+            total_estimated = (
+                sum(s.estimated_words for s in sections) + 200
+            )  # Add intro/conclusion
 
             # Create ContentOutline
             outline = ContentOutline(
@@ -317,7 +313,7 @@ Please provide a refined outline that addresses the feedback while maintaining t
                 sections=sections,
                 conclusion=outline_data["conclusion"],
                 estimated_word_count=total_estimated,
-                target_keywords=outline_data.get("target_keywords", [])
+                target_keywords=outline_data.get("target_keywords", []),
             )
 
             # Validate outline quality
@@ -330,17 +326,15 @@ Please provide a refined outline that addresses the feedback while maintaining t
             raise ContentQualityError(f"Outline parsing failed: {e}")
 
     async def _validate_outline_quality(
-        self,
-        outline: ContentOutline,
-        blog_input: BlogInput
+        self, outline: ContentOutline, blog_input: BlogInput
     ) -> None:
         """
         Validate that the outline meets quality standards.
-        
+
         Args:
             outline: The outline to validate
             blog_input: Original requirements for validation
-            
+
         Raises:
             ContentQualityError: If outline doesn't meet quality standards
         """
@@ -370,10 +364,14 @@ Please provide a refined outline that addresses the feedback while maintaining t
                 raise ContentQualityError("All sections must have headings")
 
             if len(section.key_points) < 1:
-                raise ContentQualityError(f"Section '{section.heading}' has no key points")
+                raise ContentQualityError(
+                    f"Section '{section.heading}' has no key points"
+                )
 
             if section.estimated_words < 50:
-                raise ContentQualityError(f"Section '{section.heading}' estimated word count too low")
+                raise ContentQualityError(
+                    f"Section '{section.heading}' estimated word count too low"
+                )
 
         # Check total length alignment
         length_diff = abs(outline.estimated_word_count - blog_input.preferred_length)
@@ -394,13 +392,15 @@ Please provide a refined outline that addresses the feedback while maintaining t
 
         self.logger.info("Outline validation passed")
 
-    async def analyze_outline_completeness(self, outline: ContentOutline) -> dict[str, Any]:
+    async def analyze_outline_completeness(
+        self, outline: ContentOutline
+    ) -> dict[str, Any]:
         """
         Analyze how complete and well-structured an outline is.
-        
+
         Args:
             outline: The outline to analyze
-            
+
         Returns:
             Analysis results with scores and recommendations
         """
@@ -409,19 +409,23 @@ Please provide a refined outline that addresses the feedback while maintaining t
             "structure_score": 0.0,
             "seo_readiness": 0.0,
             "recommendations": [],
-            "strengths": []
+            "strengths": [],
         }
 
         # Completeness scoring
         completeness_factors = []
 
         # Check if sections have sufficient key points
-        avg_points_per_section = sum(len(s.key_points) for s in outline.sections) / len(outline.sections)
+        avg_points_per_section = sum(len(s.key_points) for s in outline.sections) / len(
+            outline.sections
+        )
         if avg_points_per_section >= 3:
             completeness_factors.append(0.3)
             analysis["strengths"].append("Sections have comprehensive key points")
         else:
-            analysis["recommendations"].append("Add more key points to sections (aim for 3-5 per section)")
+            analysis["recommendations"].append(
+                "Add more key points to sections (aim for 3-5 per section)"
+            )
 
         # Check introduction and conclusion depth
         intro_words = len(outline.introduction.split())
@@ -429,9 +433,13 @@ Please provide a refined outline that addresses the feedback while maintaining t
 
         if intro_words >= 15 and conclusion_words >= 10:
             completeness_factors.append(0.25)
-            analysis["strengths"].append("Introduction and conclusion are well-developed")
+            analysis["strengths"].append(
+                "Introduction and conclusion are well-developed"
+            )
         else:
-            analysis["recommendations"].append("Expand introduction and conclusion summaries")
+            analysis["recommendations"].append(
+                "Expand introduction and conclusion summaries"
+            )
 
         # Check for code examples planning
         code_sections = sum(1 for s in outline.sections if s.code_examples_needed)
@@ -444,7 +452,9 @@ Please provide a refined outline that addresses the feedback while maintaining t
             completeness_factors.append(0.25)
             analysis["strengths"].append("Good SEO keyword planning")
         else:
-            analysis["recommendations"].append("Include more target keywords (aim for 5-8)")
+            analysis["recommendations"].append(
+                "Include more target keywords (aim for 5-8)"
+            )
 
         analysis["completeness_score"] = sum(completeness_factors)
 
@@ -455,14 +465,18 @@ Please provide a refined outline that addresses the feedback while maintaining t
         word_counts = [s.estimated_words for s in outline.sections]
         if word_counts:
             avg_words = sum(word_counts) / len(word_counts)
-            balanced_sections = sum(1 for wc in word_counts if 0.5 * avg_words <= wc <= 2 * avg_words)
+            balanced_sections = sum(
+                1 for wc in word_counts if 0.5 * avg_words <= wc <= 2 * avg_words
+            )
             balance_ratio = balanced_sections / len(word_counts)
 
             if balance_ratio >= 0.8:
                 structure_factors.append(0.4)
                 analysis["strengths"].append("Well-balanced section lengths")
             else:
-                analysis["recommendations"].append("Balance section lengths more evenly")
+                analysis["recommendations"].append(
+                    "Balance section lengths more evenly"
+                )
 
         # Check logical flow (basic heuristics)
         if len(outline.sections) >= 3:
@@ -474,7 +488,9 @@ Please provide a refined outline that addresses the feedback while maintaining t
             structure_factors.append(0.3)
             analysis["strengths"].append("Title length is optimal")
         else:
-            analysis["recommendations"].append("Adjust title length (aim for 4-12 words)")
+            analysis["recommendations"].append(
+                "Adjust title length (aim for 4-12 words)"
+            )
 
         analysis["structure_score"] = sum(structure_factors)
 
@@ -486,7 +502,9 @@ Please provide a refined outline that addresses the feedback while maintaining t
 
             # Check if keywords appear in title
             title_lower = outline.title.lower()
-            keyword_in_title = any(kw.lower() in title_lower for kw in outline.target_keywords)
+            keyword_in_title = any(
+                kw.lower() in title_lower for kw in outline.target_keywords
+            )
             if keyword_in_title:
                 seo_factors.append(0.3)
                 analysis["strengths"].append("Keywords incorporated in title")

@@ -25,6 +25,7 @@ from .ai_semantic_analyzer import SemanticInsight
 @dataclass
 class BlogTitleCandidate:
     """Represents a generated blog title candidate with metadata"""
+
     title: str
     pattern_type: str  # "performance", "comparison", "implementation", "problem-solution", "how-to"
     source_insights: list[str] = field(default_factory=list)  # Source insight IDs
@@ -52,15 +53,17 @@ class BlogTitleGenerator:
     based on semantic insights from technical articles.
     """
 
-    def __init__(self,
-                 api_key: str | None = None,
-                 model: str = OPENAI_MODEL,
-                 temperature: float = 0.4,  # Slightly more creative for titles
-                 timeout: int = 45,
-                 max_retries: int = 3):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = OPENAI_MODEL,
+        temperature: float = 0.4,  # Slightly more creative for titles
+        timeout: int = 45,
+        max_retries: int = 3,
+    ):
         """
         Initialize Blog Title Generator
-        
+
         Args:
             api_key: OpenAI API key
             model: OpenAI model for title generation
@@ -82,9 +85,7 @@ class BlogTitleGenerator:
 
         # Initialize async OpenAI client
         self.client = AsyncOpenAI(
-            api_key=self.api_key,
-            timeout=self.timeout,
-            max_retries=self.max_retries
+            api_key=self.api_key, timeout=self.timeout, max_retries=self.max_retries
         )
 
         # Title pattern templates for fallback
@@ -100,66 +101,76 @@ class BlogTitleGenerator:
                 "How {company} {action} {metric} by {amount} using {technology}",
                 "Why {company} achieved {metric} improvement with {technology}",
                 "{company}'s {metric} optimization using {technology}",
-                "How {technology} helped {company} {action} {metric} by {amount}"
+                "How {technology} helped {company} {action} {metric} by {amount}",
             ],
             "comparison": [
                 "Why {tech1} outperforms {tech2} for {use_case}",
                 "{tech1} vs {tech2}: Which is better for {use_case}?",
                 "How {tech1} compares to {tech2} in {metric}",
-                "Choosing between {tech1} and {tech2} for {use_case}"
+                "Choosing between {tech1} and {tech2} for {use_case}",
             ],
             "implementation": [
                 "How to implement {technology} for {use_case}",
                 "{number} ways to optimize {process} with {technology}",
                 "Building {solution} with {technology}: A complete guide",
-                "Implementing {technology}: Lessons from {company}"
+                "Implementing {technology}: Lessons from {company}",
             ],
             "problem-solution": [
                 "How {company} solved {problem} with {technology}",
                 "Solving {problem}: {company}'s approach using {technology}",
                 "How to fix {problem} using {technology}",
-                "{company}'s innovative solution to {problem}"
+                "{company}'s innovative solution to {problem}",
             ],
             "how-to": [
                 "How to {action} using {technology}",
                 "A guide to {process} with {technology}",
                 "{number} steps to {outcome} using {technology}",
-                "How to get started with {technology} for {use_case}"
-            ]
+                "How to get started with {technology} for {use_case}",
+            ],
         }
 
-    async def generate_specific_titles(self, insights: list[SemanticInsight], max_titles: int = 30) -> list[BlogTitleCandidate]:
+    async def generate_specific_titles(
+        self, insights: list[SemanticInsight], max_titles: int = 30
+    ) -> list[BlogTitleCandidate]:
         """
         Generate specific, actionable blog titles from semantic insights
-        
+
         Args:
             insights: List of semantic insights from articles
             max_titles: Maximum number of titles to generate
-            
+
         Returns:
             List of generated blog title candidates
         """
         if not insights:
             return []
 
-        self.logger.info(f"Generating blog titles from {len(insights)} semantic insights")
+        self.logger.info(
+            f"Generating blog titles from {len(insights)} semantic insights"
+        )
 
         # Filter high-quality insights
         quality_insights = [
-            insight for insight in insights
-            if insight.confidence_score > 0.3 and (
-                insight.technical_concepts or
-                insight.performance_metrics or
-                insight.key_insights
+            insight
+            for insight in insights
+            if insight.confidence_score > 0.3
+            and (
+                insight.technical_concepts
+                or insight.performance_metrics
+                or insight.key_insights
             )
         ]
 
         if not quality_insights:
-            self.logger.warning("No high-quality insights available for title generation")
+            self.logger.warning(
+                "No high-quality insights available for title generation"
+            )
             return []
 
         # Process insights with concurrency control
-        semaphore = asyncio.Semaphore(2)  # Limit to 2 concurrent title generation requests
+        semaphore = asyncio.Semaphore(
+            2
+        )  # Limit to 2 concurrent title generation requests
         tasks = []
 
         # Generate titles for each insight
@@ -179,17 +190,23 @@ class BlogTitleGenerator:
 
         # Remove duplicates and rank by quality
         unique_titles = self._deduplicate_titles(all_titles)
-        ranked_titles = sorted(unique_titles,
-                             key=lambda x: (x.specificity_score + x.engagement_score) / 2,
-                             reverse=True)
+        ranked_titles = sorted(
+            unique_titles,
+            key=lambda x: (x.specificity_score + x.engagement_score) / 2,
+            reverse=True,
+        )
 
         # Limit to requested number
         final_titles = ranked_titles[:max_titles]
 
-        self.logger.info(f"Generated {len(final_titles)} unique, high-quality blog titles")
+        self.logger.info(
+            f"Generated {len(final_titles)} unique, high-quality blog titles"
+        )
         return final_titles
 
-    async def _generate_titles_for_insight(self, semaphore: asyncio.Semaphore, insight: SemanticInsight) -> list[BlogTitleCandidate]:
+    async def _generate_titles_for_insight(
+        self, semaphore: asyncio.Semaphore, insight: SemanticInsight
+    ) -> list[BlogTitleCandidate]:
         """Generate titles for a single semantic insight"""
 
         async with semaphore:
@@ -199,16 +216,24 @@ class BlogTitleGenerator:
 
                 # Generate AI-powered titles
                 try:
-                    ai_titles = await self._generate_ai_titles(insight, suitable_patterns)
+                    ai_titles = await self._generate_ai_titles(
+                        insight, suitable_patterns
+                    )
                 except Exception as e:
-                    self.logger.error(f"Error in AI title generation for {insight.article_id}: {str(e)}")
+                    self.logger.error(
+                        f"Error in AI title generation for {insight.article_id}: {str(e)}"
+                    )
                     ai_titles = []
 
                 # Generate template-based fallback titles
                 try:
-                    template_titles = self._generate_template_titles(insight, suitable_patterns)
+                    template_titles = self._generate_template_titles(
+                        insight, suitable_patterns
+                    )
                 except Exception as e:
-                    self.logger.error(f"Error in template title generation for {insight.article_id}: {str(e)}")
+                    self.logger.error(
+                        f"Error in template title generation for {insight.article_id}: {str(e)}"
+                    )
                     template_titles = []
 
                 # Combine and analyze all titles
@@ -219,16 +244,22 @@ class BlogTitleGenerator:
                 for candidate in all_candidates:
                     try:
                         self._analyze_title_metrics(candidate, insight)
-                        if candidate.specificity_score > 0.3:  # Filter low-quality titles
+                        if (
+                            candidate.specificity_score > 0.3
+                        ):  # Filter low-quality titles
                             scored_titles.append(candidate)
                     except Exception as e:
-                        self.logger.error(f"Error analyzing title metrics for {candidate.title}: {str(e)}")
+                        self.logger.error(
+                            f"Error analyzing title metrics for {candidate.title}: {str(e)}"
+                        )
                         continue
 
                 return scored_titles[:5]  # Return top 5 titles per insight
 
             except Exception as e:
-                self.logger.error(f"Error generating titles for insight {insight.article_id}: {str(e)}")
+                self.logger.error(
+                    f"Error generating titles for insight {insight.article_id}: {str(e)}"
+                )
                 return []
 
     def _identify_suitable_patterns(self, insight: SemanticInsight) -> list[str]:
@@ -237,8 +268,10 @@ class BlogTitleGenerator:
         patterns = []
 
         # Performance pattern if metrics available
-        if insight.performance_metrics or any('improved' in s.lower() or 'reduced' in s.lower()
-                                            for s in insight.key_insights):
+        if insight.performance_metrics or any(
+            "improved" in s.lower() or "reduced" in s.lower()
+            for s in insight.key_insights
+        ):
             patterns.append("performance")
 
         # Comparison pattern if multiple technologies mentioned
@@ -250,8 +283,9 @@ class BlogTitleGenerator:
             patterns.append("comparison")
 
         # Implementation pattern if solutions described
-        if insight.solutions_implemented or any(tc.implementation_approach
-                                              for tc in insight.technical_concepts):
+        if insight.solutions_implemented or any(
+            tc.implementation_approach for tc in insight.technical_concepts
+        ):
             patterns.append("implementation")
 
         # Problem-solution pattern if problems and solutions identified
@@ -268,7 +302,9 @@ class BlogTitleGenerator:
 
         return patterns
 
-    async def _generate_ai_titles(self, insight: SemanticInsight, patterns: list[str]) -> list[BlogTitleCandidate]:
+    async def _generate_ai_titles(
+        self, insight: SemanticInsight, patterns: list[str]
+    ) -> list[BlogTitleCandidate]:
         """Generate titles using AI based on semantic insights"""
 
         try:
@@ -282,12 +318,15 @@ class BlogTitleGenerator:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": self._get_title_generation_system_prompt()},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": self._get_title_generation_system_prompt(),
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=self.temperature,
                 max_tokens=1200,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
 
             # Parse AI response
@@ -306,7 +345,7 @@ class BlogTitleGenerator:
                     metrics_mentioned=title_data.get("metrics", []),
                     companies_mentioned=title_data.get("companies", []),
                     confidence=float(title_data.get("confidence", 0.5)),
-                    generation_reasoning=title_data.get("reasoning", "")
+                    generation_reasoning=title_data.get("reasoning", ""),
                 )
                 candidates.append(candidate)
 
@@ -316,19 +355,30 @@ class BlogTitleGenerator:
             self.logger.error(f"AI title generation failed: {str(e)}")
             return []
 
-    def _prepare_insight_for_ai(self, insight: SemanticInsight, patterns: list[str]) -> dict[str, Any]:
+    def _prepare_insight_for_ai(
+        self, insight: SemanticInsight, patterns: list[str]
+    ) -> dict[str, Any]:
         """Prepare semantic insight data for AI title generation"""
 
         # Extract key data points
-        technologies = list(set(
-            tech for tc in insight.technical_concepts
-            for tech in tc.technologies_used
-        ))
+        technologies = list(
+            set(
+                tech
+                for tc in insight.technical_concepts
+                for tech in tc.technologies_used
+            )
+        )
 
-        companies = list(set(
-            tc.concept for tc in insight.technical_concepts
-            if any(comp in tc.concept for comp in ['Netflix', 'Google', 'Amazon', 'Facebook', 'Microsoft'])
-        ))
+        companies = list(
+            set(
+                tc.concept
+                for tc in insight.technical_concepts
+                if any(
+                    comp in tc.concept
+                    for comp in ["Netflix", "Google", "Amazon", "Facebook", "Microsoft"]
+                )
+            )
+        )
 
         return {
             "key_insights": insight.key_insights[:5],
@@ -338,8 +388,9 @@ class BlogTitleGenerator:
                     "problem_solved": tc.problem_solved,
                     "implementation": tc.implementation_approach,
                     "technologies": tc.technologies_used,
-                    "business_impact": tc.business_impact
-                } for tc in insight.technical_concepts[:3]
+                    "business_impact": tc.business_impact,
+                }
+                for tc in insight.technical_concepts[:3]
             ],
             "performance_metrics": insight.performance_metrics[:3],
             "problems_solved": insight.problems_solved[:3],
@@ -348,7 +399,7 @@ class BlogTitleGenerator:
             "companies": companies[:3],
             "target_audience": insight.target_audience,
             "content_angle": insight.content_angle,
-            "suitable_patterns": patterns
+            "suitable_patterns": patterns,
         }
 
     def _get_title_generation_system_prompt(self) -> str:
@@ -382,27 +433,29 @@ Respond ONLY with valid JSON in this format:
 
 Generate 3-5 high-quality, specific titles per request."""
 
-    def _build_title_generation_prompt(self, insight_data: dict[str, Any], patterns: list[str]) -> str:
+    def _build_title_generation_prompt(
+        self, insight_data: dict[str, Any], patterns: list[str]
+    ) -> str:
         """Build the prompt for AI title generation"""
 
         prompt = f"""
 Generate specific, actionable blog titles based on this technical insight:
 
 **Key Insights:**
-{chr(10).join(f'- {insight}' for insight in insight_data['key_insights'])}
+{chr(10).join(f"- {insight}" for insight in insight_data["key_insights"])}
 
 **Technical Concepts:**
-{chr(10).join(f'- {tc["concept"]}: {tc["problem_solved"]}' for tc in insight_data['technical_concepts'])}
+{chr(10).join(f"- {tc['concept']}: {tc['problem_solved']}" for tc in insight_data["technical_concepts"])}
 
 **Performance Metrics:**
-{chr(10).join(f'- {metric}' for metric in insight_data['performance_metrics'])}
+{chr(10).join(f"- {metric}" for metric in insight_data["performance_metrics"])}
 
-**Technologies:** {', '.join(insight_data['technologies'])}
-**Companies:** {', '.join(insight_data['companies'])}
-**Target Audience:** {insight_data['target_audience']}
-**Content Angle:** {insight_data['content_angle']}
+**Technologies:** {", ".join(insight_data["technologies"])}
+**Companies:** {", ".join(insight_data["companies"])}
+**Target Audience:** {insight_data["target_audience"]}
+**Content Angle:** {insight_data["content_angle"]}
 
-**Suitable Title Patterns:** {', '.join(patterns)}
+**Suitable Title Patterns:** {", ".join(patterns)}
 
 Focus on creating titles that include:
 - Specific metrics or improvements
@@ -421,21 +474,32 @@ Generate titles following the specified patterns with maximum specificity.
 
         return prompt.strip()
 
-    def _generate_template_titles(self, insight: SemanticInsight, patterns: list[str]) -> list[BlogTitleCandidate]:
+    def _generate_template_titles(
+        self, insight: SemanticInsight, patterns: list[str]
+    ) -> list[BlogTitleCandidate]:
         """Generate titles using template patterns as fallback"""
 
         candidates = []
 
         # Extract data for template substitution
-        technologies = list(set(
-            tech for tc in insight.technical_concepts
-            for tech in tc.technologies_used
-        ))[:3]
+        technologies = list(
+            set(
+                tech
+                for tc in insight.technical_concepts
+                for tech in tc.technologies_used
+            )
+        )[:3]
 
-        companies = list(set(
-            tc.concept for tc in insight.technical_concepts
-            if any(comp in tc.concept for comp in ['Netflix', 'Google', 'Amazon', 'Facebook', 'Microsoft'])
-        ))[:2]
+        companies = list(
+            set(
+                tc.concept
+                for tc in insight.technical_concepts
+                if any(
+                    comp in tc.concept
+                    for comp in ["Netflix", "Google", "Amazon", "Facebook", "Microsoft"]
+                )
+            )
+        )[:2]
 
         metrics = insight.performance_metrics[:2]
         problems = insight.problems_solved[:2]
@@ -461,7 +525,7 @@ Generate titles following the specified patterns with maximum specificity.
                             key_technologies=technologies[:2],
                             metrics_mentioned=metrics,
                             companies_mentioned=companies,
-                            confidence=0.6  # Template-based confidence
+                            confidence=0.6,  # Template-based confidence
                         )
                         candidates.append(candidate)
 
@@ -471,25 +535,30 @@ Generate titles following the specified patterns with maximum specificity.
 
         return candidates
 
-    def _substitute_template_variables(self, template: str, technologies: list[str],
-                                     companies: list[str], metrics: list[str],
-                                     problems: list[str]) -> str | None:
+    def _substitute_template_variables(
+        self,
+        template: str,
+        technologies: list[str],
+        companies: list[str],
+        metrics: list[str],
+        problems: list[str],
+    ) -> str | None:
         """Substitute variables in title templates"""
 
         substitutions = {
-            'technology': technologies[0] if technologies else 'modern technology',
-            'tech1': technologies[0] if technologies else 'React',
-            'tech2': technologies[1] if len(technologies) > 1 else 'Vue',
-            'company': companies[0] if companies else 'leading companies',
-            'metric': metrics[0] if metrics else 'performance',
-            'amount': '30%',  # Default improvement amount
-            'action': 'improved',
-            'use_case': 'web applications',
-            'problem': problems[0] if problems else 'performance issues',
-            'process': 'development workflow',
-            'solution': 'scalable system',
-            'outcome': 'better performance',
-            'number': '5'
+            "technology": technologies[0] if technologies else "modern technology",
+            "tech1": technologies[0] if technologies else "React",
+            "tech2": technologies[1] if len(technologies) > 1 else "Vue",
+            "company": companies[0] if companies else "leading companies",
+            "metric": metrics[0] if metrics else "performance",
+            "amount": "30%",  # Default improvement amount
+            "action": "improved",
+            "use_case": "web applications",
+            "problem": problems[0] if problems else "performance issues",
+            "process": "development workflow",
+            "solution": "scalable system",
+            "outcome": "better performance",
+            "number": "5",
         }
 
         try:
@@ -497,16 +566,20 @@ Generate titles following the specified patterns with maximum specificity.
         except KeyError:
             return None
 
-    def _analyze_title_metrics(self, candidate: BlogTitleCandidate, insight: SemanticInsight):
+    def _analyze_title_metrics(
+        self, candidate: BlogTitleCandidate, insight: SemanticInsight
+    ):
         """Analyze and score title metrics"""
 
         title_lower = candidate.title.lower()
 
         # Calculate specificity score
         specificity_indicators = [
-            r'\b\d+%', r'\b\d+x\b', r'\bv?\d+\.\d+',  # Numbers, percentages, versions
-            r'\b(netflix|google|amazon|facebook|microsoft|stripe|uber|airbnb)\b',  # Companies
-            r'\b(react|vue|angular|python|javascript|node\.js|docker|kubernetes)\b',  # Technologies
+            r"\b\d+%",
+            r"\b\d+x\b",
+            r"\bv?\d+\.\d+",  # Numbers, percentages, versions
+            r"\b(netflix|google|amazon|facebook|microsoft|stripe|uber|airbnb)\b",  # Companies
+            r"\b(react|vue|angular|python|javascript|node\.js|docker|kubernetes)\b",  # Technologies
         ]
 
         specificity_score = 0.0
@@ -518,9 +591,16 @@ Generate titles following the specified patterns with maximum specificity.
 
         # Calculate engagement score
         engagement_indicators = [
-            r'\bhow\b', r'\bwhy\b', r'\bways?\b', r'\bguide\b',  # Action words
-            r'\bimproved?\b', r'\breduced?\b', r'\boptimized?\b',  # Results
-            r'\bbetter\b', r'\bfaster\b', r'\beasier\b'  # Benefits
+            r"\bhow\b",
+            r"\bwhy\b",
+            r"\bways?\b",
+            r"\bguide\b",  # Action words
+            r"\bimproved?\b",
+            r"\breduced?\b",
+            r"\boptimized?\b",  # Results
+            r"\bbetter\b",
+            r"\bfaster\b",
+            r"\beasier\b",  # Benefits
         ]
 
         engagement_score = 0.3  # Base score
@@ -533,7 +613,9 @@ Generate titles following the specified patterns with maximum specificity.
         # Set technical depth based on insight
         candidate.technical_depth = insight.target_audience
 
-    def _deduplicate_titles(self, titles: list[BlogTitleCandidate]) -> list[BlogTitleCandidate]:
+    def _deduplicate_titles(
+        self, titles: list[BlogTitleCandidate]
+    ) -> list[BlogTitleCandidate]:
         """Remove duplicate and very similar titles"""
 
         unique_titles = []
@@ -541,7 +623,7 @@ Generate titles following the specified patterns with maximum specificity.
 
         for title in titles:
             # Normalize title for comparison
-            normalized = re.sub(r'\W+', ' ', title.title.lower()).strip()
+            normalized = re.sub(r"\W+", " ", title.title.lower()).strip()
 
             # Check for exact duplicates
             if normalized in seen_titles:
@@ -552,7 +634,9 @@ Generate titles following the specified patterns with maximum specificity.
             title_words = set(normalized.split())
 
             for existing in unique_titles:
-                existing_normalized = re.sub(r'\W+', ' ', existing.title.lower()).strip()
+                existing_normalized = re.sub(
+                    r"\W+", " ", existing.title.lower()
+                ).strip()
                 existing_words = set(existing_normalized.split())
 
                 if len(title_words) > 0 and len(existing_words) > 0:
@@ -562,8 +646,9 @@ Generate titles following the specified patterns with maximum specificity.
                     if similarity > 0.8:
                         is_similar = True
                         # Keep the title with higher combined score
-                        if (title.specificity_score + title.engagement_score) > \
-                           (existing.specificity_score + existing.engagement_score):
+                        if (title.specificity_score + title.engagement_score) > (
+                            existing.specificity_score + existing.engagement_score
+                        ):
                             unique_titles.remove(existing)
                             break
                         else:
@@ -578,5 +663,5 @@ Generate titles following the specified patterns with maximum specificity.
 
     async def close(self):
         """Close the async OpenAI client"""
-        if hasattr(self.client, 'close'):
+        if hasattr(self.client, "close"):
             await self.client.close()

@@ -22,17 +22,20 @@ from .multi_agent_models import BlogGenerationError
 
 class ResearchProcessingError(BlogGenerationError):
     """Raised when research processing fails."""
+
     pass
 
 
 class UnsupportedFileFormatError(ResearchProcessingError):
     """Raised when a file format is not supported."""
+
     pass
 
 
 @dataclass
 class FileMetadata:
     """Metadata for processed files."""
+
     path: Path
     size_bytes: int
     created_at: datetime
@@ -44,41 +47,68 @@ class FileMetadata:
 
 class ResearchFile(BaseModel):
     """Represents a processed research file with extracted content."""
+
     path: Path = Field(..., description="File path")
     content: str = Field(..., description="Extracted text content")
     file_type: str = Field(..., description="File type (md, txt, json, etc.)")
     metadata: dict[str, Any] = Field(default_factory=dict, description="File metadata")
-    extracted_insights: list[str] = Field(default_factory=list, description="Key insights extracted")
-    processing_errors: list[str] = Field(default_factory=list, description="Errors during processing")
-    confidence_score: float = Field(1.0, description="Confidence in extraction quality", ge=0.0, le=1.0)
+    extracted_insights: list[str] = Field(
+        default_factory=list, description="Key insights extracted"
+    )
+    processing_errors: list[str] = Field(
+        default_factory=list, description="Errors during processing"
+    )
+    confidence_score: float = Field(
+        1.0, description="Confidence in extraction quality", ge=0.0, le=1.0
+    )
 
     class Config:
         arbitrary_types_allowed = True
 
-    @field_validator('path')
+    @field_validator("path")
     def path_must_exist(cls, v):
         if not v.exists():
-            raise ValueError(f'File does not exist: {v}')
+            raise ValueError(f"File does not exist: {v}")
         return v
 
 
 class Insight(BaseModel):
     """Represents a key insight extracted from research materials."""
+
     content: str = Field(..., description="The insight content")
     source_file: str = Field(..., description="Source file path")
-    confidence_score: float = Field(0.8, description="Confidence in this insight", ge=0.0, le=1.0)
-    category: str = Field("general", description="Category: problem, solution, technology, best_practice")
-    technical_concepts: list[str] = Field(default_factory=list, description="Technical concepts mentioned")
-    code_references: list[str] = Field(default_factory=list, description="Code snippets or references")
-    importance_score: float = Field(0.5, description="Relative importance", ge=0.0, le=1.0)
+    confidence_score: float = Field(
+        0.8, description="Confidence in this insight", ge=0.0, le=1.0
+    )
+    category: str = Field(
+        "general", description="Category: problem, solution, technology, best_practice"
+    )
+    technical_concepts: list[str] = Field(
+        default_factory=list, description="Technical concepts mentioned"
+    )
+    code_references: list[str] = Field(
+        default_factory=list, description="Code snippets or references"
+    )
+    importance_score: float = Field(
+        0.5, description="Relative importance", ge=0.0, le=1.0
+    )
 
 
 class KnowledgeBase(BaseModel):
     """Consolidated knowledge base from processed research."""
-    insights: list[Insight] = Field(default_factory=list, description="Extracted insights")
-    technical_concepts: set[str] = Field(default_factory=set, description="All technical concepts found")
-    code_examples: list[dict[str, str]] = Field(default_factory=list, description="Code examples found")
-    references: list[str] = Field(default_factory=list, description="Source files referenced")
+
+    insights: list[Insight] = Field(
+        default_factory=list, description="Extracted insights"
+    )
+    technical_concepts: set[str] = Field(
+        default_factory=set, description="All technical concepts found"
+    )
+    code_examples: list[dict[str, str]] = Field(
+        default_factory=list, description="Code examples found"
+    )
+    references: list[str] = Field(
+        default_factory=list, description="Source files referenced"
+    )
     summary: str = Field("", description="Summary of the knowledge base")
     processing_timestamp: datetime = Field(default_factory=datetime.now)
 
@@ -99,9 +129,8 @@ class FileParser:
         extension = file_path.suffix.lower()
         mime_type, _ = mimetypes.guess_type(str(file_path))
 
-        return (
-            extension in self.supported_extensions or
-            (mime_type and mime_type in self.supported_mime_types)
+        return extension in self.supported_extensions or (
+            mime_type and mime_type in self.supported_mime_types
         )
 
     async def parse_file(self, file_path: Path) -> ResearchFile:
@@ -119,7 +148,7 @@ class FileParser:
             created_at=datetime.fromtimestamp(stat.st_ctime),
             modified_at=datetime.fromtimestamp(stat.st_mtime),
             file_type=file_path.suffix.lower()[1:] if file_path.suffix else "unknown",
-            mime_type=mime_type or "application/octet-stream"
+            mime_type=mime_type or "application/octet-stream",
         )
 
 
@@ -137,7 +166,7 @@ class MarkdownParser(FileParser):
             metadata = self._get_file_metadata(file_path)
 
             # Read file content
-            with open(file_path, encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 raw_content = f.read()
 
             # Extract text content (removing markdown syntax for analysis)
@@ -152,13 +181,15 @@ class MarkdownParser(FileParser):
                 file_type="markdown",
                 metadata={
                     "original_format": "markdown",
-                    "headers_count": len(re.findall(r'^#+\s+', raw_content, re.MULTILINE)),
-                    "code_blocks_count": len(re.findall(r'```', raw_content)) // 2,
-                    "links_count": len(re.findall(r'\[.*?\]\(.*?\)', raw_content)),
-                    **metadata.__dict__
+                    "headers_count": len(
+                        re.findall(r"^#+\s+", raw_content, re.MULTILINE)
+                    ),
+                    "code_blocks_count": len(re.findall(r"```", raw_content)) // 2,
+                    "links_count": len(re.findall(r"\[.*?\]\(.*?\)", raw_content)),
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.9
+                confidence_score=0.9,
             )
 
         except Exception as e:
@@ -169,69 +200,75 @@ class MarkdownParser(FileParser):
                 file_type="markdown",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
     def _extract_text_from_markdown(self, content: str) -> str:
         """Extract plain text from markdown content."""
         # Remove code blocks first
-        content = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+        content = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
 
         # Remove inline code
-        content = re.sub(r'`[^`]+`', '', content)
+        content = re.sub(r"`[^`]+`", "", content)
 
         # Remove links but keep text
-        content = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', content)
+        content = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", content)
 
         # Remove images
-        content = re.sub(r'!\[.*?\]\(.*?\)', '', content)
+        content = re.sub(r"!\[.*?\]\(.*?\)", "", content)
 
         # Remove emphasis markers
-        content = re.sub(r'[*_]{1,2}([^*_]+)[*_]{1,2}', r'\1', content)
+        content = re.sub(r"[*_]{1,2}([^*_]+)[*_]{1,2}", r"\1", content)
 
         # Convert headers to plain text
-        content = re.sub(r'^#+\s+', '', content, flags=re.MULTILINE)
+        content = re.sub(r"^#+\s+", "", content, flags=re.MULTILINE)
 
         # Remove list markers
-        content = re.sub(r'^\s*[-*+]\s+', '', content, flags=re.MULTILINE)
-        content = re.sub(r'^\s*\d+\.\s+', '', content, flags=re.MULTILINE)
+        content = re.sub(r"^\s*[-*+]\s+", "", content, flags=re.MULTILINE)
+        content = re.sub(r"^\s*\d+\.\s+", "", content, flags=re.MULTILINE)
 
         # Clean up whitespace
-        content = re.sub(r'\n\s*\n', '\n\n', content)
+        content = re.sub(r"\n\s*\n", "\n\n", content)
         content = content.strip()
 
         return content
 
-    def _extract_markdown_insights(self, content: str, source_file: str) -> list[Insight]:
+    def _extract_markdown_insights(
+        self, content: str, source_file: str
+    ) -> list[Insight]:
         """Extract insights from markdown structure."""
         insights = []
 
         # Extract from headers
-        headers = re.findall(r'^(#+)\s+(.+)$', content, re.MULTILINE)
+        headers = re.findall(r"^(#+)\s+(.+)$", content, re.MULTILINE)
         for level_markers, header_text in headers:
             level = len(level_markers)
             if level <= 3:  # Focus on main headers
-                insights.append(Insight(
-                    content=f"Topic: {header_text}",
-                    source_file=source_file,
-                    category="topic",
-                    confidence_score=0.8,
-                    importance_score=max(0.3, 1.0 - (level - 1) * 0.2)
-                ))
+                insights.append(
+                    Insight(
+                        content=f"Topic: {header_text}",
+                        source_file=source_file,
+                        category="topic",
+                        confidence_score=0.8,
+                        importance_score=max(0.3, 1.0 - (level - 1) * 0.2),
+                    )
+                )
 
         # Extract from code blocks with language specification
-        code_blocks = re.findall(r'```(\w+)\n(.*?)\n```', content, re.DOTALL)
+        code_blocks = re.findall(r"```(\w+)\n(.*?)\n```", content, re.DOTALL)
         for language, code in code_blocks:
             if code.strip():
-                insights.append(Insight(
-                    content=f"Code example in {language}",
-                    source_file=source_file,
-                    category="technology",
-                    technical_concepts=[language],
-                    code_references=[code.strip()[:200]],  # First 200 chars
-                    confidence_score=0.9,
-                    importance_score=0.7
-                ))
+                insights.append(
+                    Insight(
+                        content=f"Code example in {language}",
+                        source_file=source_file,
+                        category="technology",
+                        technical_concepts=[language],
+                        code_references=[code.strip()[:200]],  # First 200 chars
+                        confidence_score=0.9,
+                        importance_score=0.7,
+                    )
+                )
 
         return insights
 
@@ -249,7 +286,7 @@ class TextParser(FileParser):
         try:
             metadata = self._get_file_metadata(file_path)
 
-            with open(file_path, encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
             # Extract basic insights from text
@@ -260,12 +297,12 @@ class TextParser(FileParser):
                 content=content,
                 file_type="text",
                 metadata={
-                    "line_count": len(content.split('\n')),
+                    "line_count": len(content.split("\n")),
                     "char_count": len(content),
-                    **metadata.__dict__
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.7
+                confidence_score=0.7,
             )
 
         except Exception as e:
@@ -276,7 +313,7 @@ class TextParser(FileParser):
                 file_type="text",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
     def _extract_text_insights(self, content: str, source_file: str) -> list[Insight]:
@@ -285,21 +322,23 @@ class TextParser(FileParser):
 
         # Look for technical terms
         technical_terms = re.findall(
-            r'\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript)\b',
+            r"\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript)\b",
             content,
-            re.IGNORECASE
+            re.IGNORECASE,
         )
 
         if technical_terms:
             unique_terms = list(set(term.lower() for term in technical_terms))
-            insights.append(Insight(
-                content=f"Technical concepts: {', '.join(unique_terms)}",
-                source_file=source_file,
-                category="technology",
-                technical_concepts=unique_terms,
-                confidence_score=0.6,
-                importance_score=0.5
-            ))
+            insights.append(
+                Insight(
+                    content=f"Technical concepts: {', '.join(unique_terms)}",
+                    source_file=source_file,
+                    category="technology",
+                    technical_concepts=unique_terms,
+                    confidence_score=0.6,
+                    importance_score=0.5,
+                )
+            )
 
         return insights
 
@@ -317,8 +356,8 @@ class JSONParser(FileParser):
         try:
             metadata = self._get_file_metadata(file_path)
 
-            with open(file_path, encoding='utf-8') as f:
-                if file_path.suffix.lower() == '.jsonl':
+            with open(file_path, encoding="utf-8") as f:
+                if file_path.suffix.lower() == ".jsonl":
                     # Handle JSON Lines format
                     data = [json.loads(line) for line in f if line.strip()]
                 else:
@@ -335,10 +374,10 @@ class JSONParser(FileParser):
                 metadata={
                     "structure": "list" if isinstance(data, list) else "object",
                     "items_count": len(data) if isinstance(data, (list, dict)) else 1,
-                    **metadata.__dict__
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.8
+                confidence_score=0.8,
             )
 
         except Exception as e:
@@ -349,7 +388,7 @@ class JSONParser(FileParser):
                 file_type="json",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
     def _json_to_text(self, data: dict | list | Any) -> str:
@@ -377,7 +416,9 @@ class JSONParser(FileParser):
         else:
             return str(data)
 
-    def _extract_json_insights(self, data: dict | list | Any, source_file: str) -> list[Insight]:
+    def _extract_json_insights(
+        self, data: dict | list | Any, source_file: str
+    ) -> list[Insight]:
         """Extract insights from JSON structure and content."""
         insights = []
 
@@ -385,22 +426,26 @@ class JSONParser(FileParser):
             # Extract from dictionary keys
             keys = list(data.keys())
             if keys:
-                insights.append(Insight(
-                    content=f"Configuration/data keys: {', '.join(keys[:10])}",
-                    source_file=source_file,
-                    category="best_practice",
-                    confidence_score=0.7,
-                    importance_score=0.4
-                ))
+                insights.append(
+                    Insight(
+                        content=f"Configuration/data keys: {', '.join(keys[:10])}",
+                        source_file=source_file,
+                        category="best_practice",
+                        confidence_score=0.7,
+                        importance_score=0.4,
+                    )
+                )
 
         elif isinstance(data, list) and data:
-            insights.append(Insight(
-                content=f"Dataset with {len(data)} items",
-                source_file=source_file,
-                category="general",
-                confidence_score=0.8,
-                importance_score=0.5
-            ))
+            insights.append(
+                Insight(
+                    content=f"Dataset with {len(data)} items",
+                    source_file=source_file,
+                    category="general",
+                    confidence_score=0.8,
+                    importance_score=0.5,
+                )
+            )
 
         return insights
 
@@ -410,11 +455,7 @@ class ResearchProcessor:
 
     def __init__(self):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.parsers: list[FileParser] = [
-            MarkdownParser(),
-            TextParser(),
-            JSONParser()
-        ]
+        self.parsers: list[FileParser] = [MarkdownParser(), TextParser(), JSONParser()]
 
         # Add advanced parsers if available
         try:
@@ -422,12 +463,15 @@ class ResearchProcessor:
                 get_advanced_parsers,
                 get_missing_dependencies,
             )
+
             advanced_parsers = get_advanced_parsers()
             self.parsers.extend(advanced_parsers)
 
             missing_deps = get_missing_dependencies()
             if missing_deps:
-                self.logger.warning(f"Some advanced file format support unavailable: {', '.join(missing_deps)}")
+                self.logger.warning(
+                    f"Some advanced file format support unavailable: {', '.join(missing_deps)}"
+                )
 
             self.logger.info(f"Loaded {len(advanced_parsers)} advanced file parsers")
 
@@ -441,7 +485,9 @@ class ResearchProcessor:
         for parser in self.parsers:
             self.supported_extensions.update(parser.supported_extensions)
 
-    async def process_folder(self, folder_path: Path, recursive: bool = True) -> KnowledgeBase:
+    async def process_folder(
+        self, folder_path: Path, recursive: bool = True
+    ) -> KnowledgeBase:
         """
         Process all supported files in a folder and extract knowledge.
 
@@ -475,7 +521,9 @@ class ResearchProcessor:
         # Synthesize knowledge
         knowledge_base = await self._synthesize_knowledge(processed_files)
 
-        self.logger.info(f"Generated knowledge base with {len(knowledge_base.insights)} insights")
+        self.logger.info(
+            f"Generated knowledge base with {len(knowledge_base.insights)} insights"
+        )
         return knowledge_base
 
     def _find_supported_files(self, folder_path: Path, recursive: bool) -> list[Path]:
@@ -506,7 +554,9 @@ class ResearchProcessor:
                 return parser
         return None
 
-    async def _process_files_concurrently(self, files: list[Path]) -> list[ResearchFile]:
+    async def _process_files_concurrently(
+        self, files: list[Path]
+    ) -> list[ResearchFile]:
         """Process multiple files concurrently."""
         tasks = []
 
@@ -536,7 +586,9 @@ class ResearchProcessor:
 
         return processed_files
 
-    async def _synthesize_knowledge(self, processed_files: list[ResearchFile]) -> KnowledgeBase:
+    async def _synthesize_knowledge(
+        self, processed_files: list[ResearchFile]
+    ) -> KnowledgeBase:
         """Synthesize knowledge from processed files."""
         all_insights = []
         all_technical_concepts = set()
@@ -552,7 +604,7 @@ class ResearchProcessor:
                     content=insight_text,
                     source_file=str(file_data.path),
                     confidence_score=file_data.confidence_score,
-                    category="general"
+                    category="general",
                 )
                 all_insights.append(insight)
 
@@ -563,13 +615,18 @@ class ResearchProcessor:
                     all_technical_concepts.update(concepts)
 
             # Collect code examples from metadata
-            if "code_blocks_count" in file_data.metadata and file_data.metadata["code_blocks_count"] > 0:
+            if (
+                "code_blocks_count" in file_data.metadata
+                and file_data.metadata["code_blocks_count"] > 0
+            ):
                 # This is a simplified approach - in practice, you'd extract actual code blocks
-                code_examples.append({
-                    "source": str(file_data.path),
-                    "type": file_data.file_type,
-                    "count": file_data.metadata["code_blocks_count"]
-                })
+                code_examples.append(
+                    {
+                        "source": str(file_data.path),
+                        "type": file_data.file_type,
+                        "count": file_data.metadata["code_blocks_count"],
+                    }
+                )
 
         # Create summary
         summary = self._generate_knowledge_summary(processed_files, all_insights)
@@ -579,10 +636,12 @@ class ResearchProcessor:
             technical_concepts=all_technical_concepts,
             code_examples=code_examples,
             references=references,
-            summary=summary
+            summary=summary,
         )
 
-    def _generate_knowledge_summary(self, processed_files: list[ResearchFile], insights: list[Insight]) -> str:
+    def _generate_knowledge_summary(
+        self, processed_files: list[ResearchFile], insights: list[Insight]
+    ) -> str:
         """Generate a summary of the processed knowledge."""
         file_types = {}
         total_insights = len(insights)
@@ -591,7 +650,9 @@ class ResearchProcessor:
             file_type = file_data.file_type
             file_types[file_type] = file_types.get(file_type, 0) + 1
 
-        file_summary = ", ".join([f"{count} {ftype} files" for ftype, count in file_types.items()])
+        file_summary = ", ".join(
+            [f"{count} {ftype} files" for ftype, count in file_types.items()]
+        )
 
         return f"Processed {len(processed_files)} files ({file_summary}) and extracted {total_insights} insights."
 

@@ -20,16 +20,19 @@ from .multi_agent_models import BlogGenerationError
 
 class PersonaError(BlogGenerationError):
     """Raised when persona operations fail."""
+
     pass
 
 
 class PersonaConsistencyError(PersonaError):
     """Raised when persona consistency is violated."""
+
     pass
 
 
 class CommunicationStyle(str, Enum):
     """Communication style options."""
+
     CASUAL = "casual"
     PROFESSIONAL = "professional"
     TECHNICAL = "technical"
@@ -39,6 +42,7 @@ class CommunicationStyle(str, Enum):
 
 class FormalityLevel(str, Enum):
     """Formality level options."""
+
     VERY_CASUAL = "very_casual"
     CASUAL = "casual"
     MODERATE = "moderate"
@@ -48,6 +52,7 @@ class FormalityLevel(str, Enum):
 
 class TechnicalDepth(str, Enum):
     """Technical depth levels."""
+
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"
     ADVANCED = "advanced"
@@ -56,6 +61,7 @@ class TechnicalDepth(str, Enum):
 
 class DialoguePace(str, Enum):
     """Dialogue pacing options."""
+
     QUICK = "quick"
     MODERATE = "moderate"
     DETAILED = "detailed"
@@ -65,6 +71,7 @@ class DialoguePace(str, Enum):
 @dataclass
 class PersonalityTrait:
     """Represents a personality trait with intensity."""
+
     name: str
     intensity: float  # 0.0 to 1.0
     description: str
@@ -73,62 +80,94 @@ class PersonalityTrait:
 
 class PersonaProfile(BaseModel):
     """Detailed persona profile for conversational agents."""
+
     name: str = Field(..., description="Persona name")
-    role: str = Field(..., description="Role in conversation (problem_presenter, solution_provider)")
+    role: str = Field(
+        ..., description="Role in conversation (problem_presenter, solution_provider)"
+    )
     background: str = Field(..., description="Professional background")
     expertise_areas: list[str] = Field(..., description="Areas of expertise")
     communication_style: CommunicationStyle = Field(CommunicationStyle.PROFESSIONAL)
-    personality_traits: list[str] = Field(default_factory=list, description="Key personality traits")
-    typical_phrases: list[str] = Field(default_factory=list, description="Characteristic phrases")
+    personality_traits: list[str] = Field(
+        default_factory=list, description="Key personality traits"
+    )
+    typical_phrases: list[str] = Field(
+        default_factory=list, description="Characteristic phrases"
+    )
     technical_level: TechnicalDepth = Field(TechnicalDepth.INTERMEDIATE)
-    conversation_goals: list[str] = Field(default_factory=list, description="What they aim to achieve")
-    preferred_topics: list[str] = Field(default_factory=list, description="Topics they gravitate toward")
-    speech_patterns: dict[str, Any] = Field(default_factory=dict, description="Speech pattern preferences")
+    conversation_goals: list[str] = Field(
+        default_factory=list, description="What they aim to achieve"
+    )
+    preferred_topics: list[str] = Field(
+        default_factory=list, description="Topics they gravitate toward"
+    )
+    speech_patterns: dict[str, Any] = Field(
+        default_factory=dict, description="Speech pattern preferences"
+    )
 
-    @field_validator('personality_traits')
+    @field_validator("personality_traits")
     def validate_traits(cls, v):
         if len(v) > 8:
-            raise ValueError('Maximum 8 personality traits allowed')
+            raise ValueError("Maximum 8 personality traits allowed")
         return v
 
 
 class ConversationStyle(BaseModel):
     """Configuration for conversation style and flow."""
+
     formality_level: FormalityLevel = Field(FormalityLevel.MODERATE)
     technical_depth: TechnicalDepth = Field(TechnicalDepth.INTERMEDIATE)
     dialogue_pace: DialoguePace = Field(DialoguePace.MODERATE)
-    max_exchange_length: int = Field(3, description="Max sentences per exchange", ge=1, le=10)
+    max_exchange_length: int = Field(
+        3, description="Max sentences per exchange", ge=1, le=10
+    )
     include_questions: bool = Field(True, description="Include rhetorical questions")
-    allow_interruptions: bool = Field(False, description="Allow conversation interruptions")
-    context_awareness: float = Field(0.8, description="How much context to maintain", ge=0.0, le=1.0)
+    allow_interruptions: bool = Field(
+        False, description="Allow conversation interruptions"
+    )
+    context_awareness: float = Field(
+        0.8, description="How much context to maintain", ge=0.0, le=1.0
+    )
     topic_transitions: bool = Field(True, description="Allow smooth topic transitions")
 
 
 class PersonaConfig(BaseModel):
     """Complete configuration for conversational personas."""
-    problem_presenter: PersonaProfile = Field(..., description="Persona presenting problems")
-    solution_provider: PersonaProfile = Field(..., description="Persona providing solutions")
-    conversation_style: ConversationStyle = Field(default_factory=ConversationStyle)
-    domain_focus: str = Field("software_development", description="Primary domain focus")
-    target_audience: str = Field("developers", description="Target audience for conversation")
-    dialogue_objective: str = Field("educational", description="Main objective of dialogue")
 
-    @field_validator('problem_presenter')
+    problem_presenter: PersonaProfile = Field(
+        ..., description="Persona presenting problems"
+    )
+    solution_provider: PersonaProfile = Field(
+        ..., description="Persona providing solutions"
+    )
+    conversation_style: ConversationStyle = Field(default_factory=ConversationStyle)
+    domain_focus: str = Field(
+        "software_development", description="Primary domain focus"
+    )
+    target_audience: str = Field(
+        "developers", description="Target audience for conversation"
+    )
+    dialogue_objective: str = Field(
+        "educational", description="Main objective of dialogue"
+    )
+
+    @field_validator("problem_presenter")
     def validate_problem_presenter(cls, v):
-        if v.role != 'problem_presenter':
-            v.role = 'problem_presenter'
+        if v.role != "problem_presenter":
+            v.role = "problem_presenter"
         return v
 
-    @field_validator('solution_provider')
+    @field_validator("solution_provider")
     def validate_solution_provider(cls, v):
-        if v.role != 'solution_provider':
-            v.role = 'solution_provider'
+        if v.role != "solution_provider":
+            v.role = "solution_provider"
         return v
 
 
 @dataclass
 class DialogueExchange:
     """Represents a single exchange in dialogue."""
+
     speaker: str  # persona name
     content: str
     intent: str  # question, explanation, example, etc.
@@ -140,6 +179,7 @@ class DialogueExchange:
 @dataclass
 class DialogueSection:
     """Section of dialogue focused on a specific topic."""
+
     section_title: str
     exchanges: list[DialogueExchange] = field(default_factory=list)
     technical_focus: str = ""
@@ -160,7 +200,7 @@ class ProblemPresenter:
                 "Present realistic development challenges",
                 "Ask practical questions",
                 "Share common pain points",
-                "Seek actionable solutions"
+                "Seek actionable solutions",
             ]
 
         if not profile.typical_phrases:
@@ -176,7 +216,7 @@ class ProblemPresenter:
             "I've tried several approaches but",
             "The issue seems to be",
             "I'm looking for a way to",
-            "How do you handle situations where"
+            "How do you handle situations where",
         ]
 
     def generate_problem_statement(self, topic: str, context: dict[str, Any]) -> str:
@@ -185,7 +225,7 @@ class ProblemPresenter:
             f"I've been working on {topic}, but I'm running into some challenges.",
             f"When dealing with {topic}, what's the best approach to handle complexity?",
             f"I'm trying to implement {topic} in my project, but I'm not sure where to start.",
-            f"What are the common pitfalls when working with {topic}?"
+            f"What are the common pitfalls when working with {topic}?",
         ]
 
         # Select template based on context or randomly
@@ -199,7 +239,7 @@ class ProblemPresenter:
             "What about performance considerations?",
             "Are there any alternatives to this approach?",
             "How does this scale in larger applications?",
-            "What are the potential drawbacks?"
+            "What are the potential drawbacks?",
         ]
 
         return questions[:2]  # Return 2 follow-up questions
@@ -218,7 +258,7 @@ class SolutionProvider:
                 "Provide practical solutions",
                 "Explain technical concepts clearly",
                 "Share best practices",
-                "Offer multiple approaches"
+                "Offer multiple approaches",
             ]
 
         if not profile.typical_phrases:
@@ -234,7 +274,7 @@ class SolutionProvider:
             "The best practice is to",
             "Consider this approach",
             "Here's what I recommend",
-            "One effective strategy is"
+            "One effective strategy is",
         ]
 
     def generate_solution_response(self, problem: str, context: dict[str, Any]) -> str:
@@ -243,7 +283,7 @@ class SolutionProvider:
             "That's a common challenge. Here's how I typically approach it:",
             "I've dealt with similar issues. The key is to:",
             "Let me share a strategy that works well for this:",
-            "Here's a practical solution that should help:"
+            "Here's a practical solution that should help:",
         ]
 
         template = solution_templates[hash(problem) % len(solution_templates)]
@@ -255,7 +295,7 @@ class SolutionProvider:
             f"Here's a practical example of {concept}:",
             f"Let me show you how to implement {concept}:",
             f"This is how I typically set up {concept}:",
-            f"Here's a clean implementation of {concept}:"
+            f"Here's a clean implementation of {concept}:",
         ]
 
         return intros[hash(concept) % len(intros)]
@@ -270,20 +310,28 @@ class PersonaManager:
         self.conversation_history: list[DialogueExchange] = []
         self.consistency_rules: dict[str, list[str]] = {}
 
-    def create_personas(self, config: PersonaConfig) -> tuple[ProblemPresenter, SolutionProvider]:
+    def create_personas(
+        self, config: PersonaConfig
+    ) -> tuple[ProblemPresenter, SolutionProvider]:
         """Create persona instances from configuration."""
         try:
             problem_presenter = ProblemPresenter(config.problem_presenter)
             solution_provider = SolutionProvider(config.solution_provider)
 
             # Store active personas
-            self.active_personas[config.problem_presenter.name] = config.problem_presenter
-            self.active_personas[config.solution_provider.name] = config.solution_provider
+            self.active_personas[config.problem_presenter.name] = (
+                config.problem_presenter
+            )
+            self.active_personas[config.solution_provider.name] = (
+                config.solution_provider
+            )
 
             # Set up consistency rules
             self._setup_consistency_rules(config)
 
-            self.logger.info(f"Created personas: {config.problem_presenter.name} and {config.solution_provider.name}")
+            self.logger.info(
+                f"Created personas: {config.problem_presenter.name} and {config.solution_provider.name}"
+            )
             return problem_presenter, solution_provider
 
         except Exception as e:
@@ -297,23 +345,23 @@ class PersonaManager:
                 "should ask questions or present problems",
                 "should show uncertainty or need for guidance",
                 "should reference practical scenarios",
-                f"should maintain {config.problem_presenter.communication_style.value} communication style"
+                f"should maintain {config.problem_presenter.communication_style.value} communication style",
             ],
             config.solution_provider.name: [
                 "should provide solutions or explanations",
                 "should demonstrate expertise and confidence",
                 "should offer practical advice",
-                f"should maintain {config.solution_provider.communication_style.value} communication style"
-            ]
+                f"should maintain {config.solution_provider.communication_style.value} communication style",
+            ],
         }
 
     def validate_persona_consistency(self, dialogue: str) -> tuple[bool, list[str]]:
         """
         Validate that dialogue maintains persona consistency.
-        
+
         Args:
             dialogue: The dialogue content to validate
-            
+
         Returns:
             Tuple of (is_consistent, list_of_issues)
         """
@@ -348,7 +396,7 @@ class PersonaManager:
         exchanges = []
 
         # Look for speaker patterns (Name: content)
-        pattern = r'^([A-Za-z\s]+):\s*(.+?)(?=^\w+:|$)'
+        pattern = r"^([A-Za-z\s]+):\s*(.+?)(?=^\w+:|$)"
         matches = re.finditer(pattern, dialogue, re.MULTILINE | re.DOTALL)
 
         for match in matches:
@@ -360,7 +408,7 @@ class PersonaManager:
                     speaker=speaker_name,
                     content=content,
                     intent=self._infer_intent(content),
-                    technical_concepts=self._extract_technical_concepts(content)
+                    technical_concepts=self._extract_technical_concepts(content),
                 )
                 exchanges.append(exchange)
 
@@ -370,15 +418,15 @@ class PersonaManager:
         """Infer the intent of the dialogue content."""
         content_lower = content.lower()
 
-        if '?' in content:
+        if "?" in content:
             return "question"
-        elif any(word in content_lower for word in ['explain', 'describe', 'define']):
+        elif any(word in content_lower for word in ["explain", "describe", "define"]):
             return "explanation"
-        elif any(word in content_lower for word in ['example', 'show', 'demonstrate']):
+        elif any(word in content_lower for word in ["example", "show", "demonstrate"]):
             return "example"
-        elif any(word in content_lower for word in ['problem', 'issue', 'challenge']):
+        elif any(word in content_lower for word in ["problem", "issue", "challenge"]):
             return "problem"
-        elif any(word in content_lower for word in ['solution', 'fix', 'approach']):
+        elif any(word in content_lower for word in ["solution", "fix", "approach"]):
             return "solution"
         else:
             return "discussion"
@@ -387,9 +435,9 @@ class PersonaManager:
         """Extract technical concepts from content."""
         # This is a simplified version - could be enhanced with NLP
         technical_terms = re.findall(
-            r'\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript|Git|CI/CD|DevOps)\b',
+            r"\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript|Git|CI/CD|DevOps)\b",
             content,
-            re.IGNORECASE
+            re.IGNORECASE,
         )
 
         return list(set(term.lower() for term in technical_terms))
@@ -406,15 +454,33 @@ class PersonaManager:
         content_lower = exchange.content.lower()
 
         # Check role-specific consistency
-        if persona.role == 'problem_presenter':
+        if persona.role == "problem_presenter":
             # Should present problems or ask questions
-            if not any(word in content_lower for word in ['problem', 'issue', 'challenge', '?', 'how', 'what', 'why']):
-                issues.append(f"{exchange.speaker} should present problems or ask questions")
+            if not any(
+                word in content_lower
+                for word in ["problem", "issue", "challenge", "?", "how", "what", "why"]
+            ):
+                issues.append(
+                    f"{exchange.speaker} should present problems or ask questions"
+                )
 
-        elif persona.role == 'solution_provider':
+        elif persona.role == "solution_provider":
             # Should provide solutions or explanations
-            if not any(word in content_lower for word in ['solution', 'approach', 'method', 'way', 'use', 'implement', 'consider']):
-                issues.append(f"{exchange.speaker} should provide solutions or explanations")
+            if not any(
+                word in content_lower
+                for word in [
+                    "solution",
+                    "approach",
+                    "method",
+                    "way",
+                    "use",
+                    "implement",
+                    "consider",
+                ]
+            ):
+                issues.append(
+                    f"{exchange.speaker} should provide solutions or explanations"
+                )
 
         # Check communication style consistency
         style_issues = self._check_communication_style(exchange, persona)
@@ -422,20 +488,22 @@ class PersonaManager:
 
         return issues
 
-    def _check_communication_style(self, exchange: DialogueExchange, persona: PersonaProfile) -> list[str]:
+    def _check_communication_style(
+        self, exchange: DialogueExchange, persona: PersonaProfile
+    ) -> list[str]:
         """Check if exchange matches persona's communication style."""
         issues = []
         content = exchange.content.lower()
 
         if persona.communication_style == CommunicationStyle.CASUAL:
             # Should use informal language
-            formal_indicators = ['furthermore', 'therefore', 'consequently', 'moreover']
+            formal_indicators = ["furthermore", "therefore", "consequently", "moreover"]
             if any(indicator in content for indicator in formal_indicators):
                 issues.append(f"{persona.name} should use more casual language")
 
         elif persona.communication_style == CommunicationStyle.FORMAL:
             # Should avoid very casual language
-            casual_indicators = ['yeah', 'ok', 'cool', 'awesome', 'kinda']
+            casual_indicators = ["yeah", "ok", "cool", "awesome", "kinda"]
             if any(indicator in content for indicator in casual_indicators):
                 issues.append(f"{persona.name} should use more formal language")
 
@@ -454,7 +522,7 @@ class PersonaManager:
         # Count consecutive exchanges by same speaker
         consecutive_count = 1
         for i in range(1, len(speakers)):
-            if speakers[i] == speakers[i-1]:
+            if speakers[i] == speakers[i - 1]:
                 consecutive_count += 1
                 if consecutive_count > 3:
                     issues.append(f"Too many consecutive exchanges by {speakers[i]}")
@@ -490,7 +558,7 @@ class PersonaManager:
         if len(exchanges) < 4:
             suggestions.append("Add more exchanges for richer dialogue")
 
-        if not any('?' in ex.content for ex in exchanges):
+        if not any("?" in ex.content for ex in exchanges):
             suggestions.append("Include some questions for more natural conversation")
 
         technical_concepts = set()
@@ -509,33 +577,37 @@ class PersonaManager:
             return {}
 
         return {
-            'name': persona.name,
-            'role': persona.role,
-            'communication_style': persona.communication_style.value,
-            'typical_phrases': persona.typical_phrases,
-            'personality_traits': persona.personality_traits,
-            'conversation_goals': persona.conversation_goals,
-            'technical_level': persona.technical_level.value,
-            'do_use': self._get_recommended_language(persona),
-            'avoid_using': self._get_language_to_avoid(persona)
+            "name": persona.name,
+            "role": persona.role,
+            "communication_style": persona.communication_style.value,
+            "typical_phrases": persona.typical_phrases,
+            "personality_traits": persona.personality_traits,
+            "conversation_goals": persona.conversation_goals,
+            "technical_level": persona.technical_level.value,
+            "do_use": self._get_recommended_language(persona),
+            "avoid_using": self._get_language_to_avoid(persona),
         }
 
     def _get_recommended_language(self, persona: PersonaProfile) -> list[str]:
         """Get recommended language patterns for persona."""
         recommendations = []
 
-        if persona.role == 'problem_presenter':
-            recommendations.extend([
-                "Questions and uncertainty expressions",
-                "Problem-focused language",
-                "Practical scenario descriptions"
-            ])
+        if persona.role == "problem_presenter":
+            recommendations.extend(
+                [
+                    "Questions and uncertainty expressions",
+                    "Problem-focused language",
+                    "Practical scenario descriptions",
+                ]
+            )
         else:
-            recommendations.extend([
-                "Solution-oriented language",
-                "Confident explanations",
-                "Best practice recommendations"
-            ])
+            recommendations.extend(
+                [
+                    "Solution-oriented language",
+                    "Confident explanations",
+                    "Best practice recommendations",
+                ]
+            )
 
         if persona.communication_style == CommunicationStyle.CASUAL:
             recommendations.append("Informal, conversational tone")
@@ -548,16 +620,20 @@ class PersonaManager:
         """Get language patterns to avoid for persona."""
         avoid = []
 
-        if persona.role == 'problem_presenter':
-            avoid.extend([
-                "Overly confident assertions",
-                "Detailed technical explanations without context"
-            ])
+        if persona.role == "problem_presenter":
+            avoid.extend(
+                [
+                    "Overly confident assertions",
+                    "Detailed technical explanations without context",
+                ]
+            )
         else:
-            avoid.extend([
-                "Uncertain or questioning tone when providing solutions",
-                "Vague or non-specific advice"
-            ])
+            avoid.extend(
+                [
+                    "Uncertain or questioning tone when providing solutions",
+                    "Vague or non-specific advice",
+                ]
+            )
 
         if persona.communication_style == CommunicationStyle.CASUAL:
             avoid.append("Overly formal or academic language")
@@ -580,9 +656,9 @@ def create_default_persona_config() -> PersonaConfig:
         conversation_goals=[
             "Present realistic development challenges",
             "Ask practical questions",
-            "Seek actionable solutions"
+            "Seek actionable solutions",
         ],
-        preferred_topics=["best practices", "troubleshooting", "tool recommendations"]
+        preferred_topics=["best practices", "troubleshooting", "tool recommendations"],
     )
 
     solution_provider = PersonaProfile(
@@ -596,15 +672,19 @@ def create_default_persona_config() -> PersonaConfig:
         conversation_goals=[
             "Provide practical solutions",
             "Explain technical concepts clearly",
-            "Share industry best practices"
+            "Share industry best practices",
         ],
-        preferred_topics=["architecture patterns", "performance optimization", "team practices"]
+        preferred_topics=[
+            "architecture patterns",
+            "performance optimization",
+            "team practices",
+        ],
     )
 
     conversation_style = ConversationStyle(
         formality_level=FormalityLevel.PROFESSIONAL,
         technical_depth=TechnicalDepth.INTERMEDIATE,
-        dialogue_pace=DialoguePace.MODERATE
+        dialogue_pace=DialoguePace.MODERATE,
     )
 
     return PersonaConfig(
@@ -612,14 +692,14 @@ def create_default_persona_config() -> PersonaConfig:
         solution_provider=solution_provider,
         conversation_style=conversation_style,
         domain_focus="software_development",
-        target_audience="developers"
+        target_audience="developers",
     )
 
 
 def load_persona_config_from_file(config_path: Path) -> PersonaConfig:
     """Load persona configuration from JSON file."""
     try:
-        with open(config_path, encoding='utf-8') as f:
+        with open(config_path, encoding="utf-8") as f:
             config_data = json.load(f)
 
         return PersonaConfig(**config_data)
@@ -634,7 +714,7 @@ def save_persona_config_to_file(config: PersonaConfig, config_path: Path) -> Non
     try:
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(config_path, 'w', encoding='utf-8') as f:
+        with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config.dict(), f, indent=2, default=str)
 
         logging.getLogger(__name__).info(f"Saved persona config to {config_path}")

@@ -24,6 +24,7 @@ from .enhanced_content_extractor import ArticleContent
 @dataclass
 class ImplicitTopic:
     """Represents an implicit topic extracted from content"""
+
     topic: str
     relevance_score: float  # 0-1 score of how relevant this topic is
     context: str  # Context where this topic was found
@@ -33,6 +34,7 @@ class ImplicitTopic:
 @dataclass
 class TechnicalConcept:
     """Represents a technical concept with implementation details"""
+
     concept: str
     implementation_approach: str
     problem_solved: str
@@ -44,6 +46,7 @@ class TechnicalConcept:
 @dataclass
 class SemanticInsight:
     """Comprehensive semantic analysis results from AI processing"""
+
     article_id: str  # Unique identifier based on URL hash
     source_article: str  # URL of source article
 
@@ -61,7 +64,9 @@ class SemanticInsight:
     analysis_date: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     # Content synthesis
-    key_insights: list[str] = field(default_factory=list)  # Top insights for title generation
+    key_insights: list[str] = field(
+        default_factory=list
+    )  # Top insights for title generation
     target_audience: str = "developers"  # Inferred audience
     content_angle: str = "technical"  # "tutorial", "analysis", "comparison", etc.
 
@@ -72,15 +77,17 @@ class AISemanticAnalyzer:
     using OpenAI's language models for intelligent blog title generation.
     """
 
-    def __init__(self,
-                 api_key: str | None = None,
-                 model: str = OPENAI_MODEL,
-                 temperature: float = OPENAI_TEMPERATURE,
-                 timeout: int = 60,
-                 max_retries: int = 3):
+    def __init__(
+        self,
+        api_key: str | None = None,
+        model: str = OPENAI_MODEL,
+        temperature: float = OPENAI_TEMPERATURE,
+        timeout: int = 60,
+        max_retries: int = 3,
+    ):
         """
         Initialize AI Semantic Analyzer
-        
+
         Args:
             api_key: OpenAI API key (uses environment default if None)
             model: OpenAI model to use for analysis
@@ -102,20 +109,20 @@ class AISemanticAnalyzer:
 
         # Initialize async OpenAI client
         self.client = AsyncOpenAI(
-            api_key=self.api_key,
-            timeout=self.timeout,
-            max_retries=self.max_retries
+            api_key=self.api_key, timeout=self.timeout, max_retries=self.max_retries
         )
 
         self.logger.info(f"AI Semantic Analyzer initialized with model: {self.model}")
 
-    async def analyze_content_semantics(self, articles: list[ArticleContent]) -> list[SemanticInsight]:
+    async def analyze_content_semantics(
+        self, articles: list[ArticleContent]
+    ) -> list[SemanticInsight]:
         """
         Perform semantic analysis on multiple articles using AI
-        
+
         Args:
             articles: List of article content to analyze
-            
+
         Returns:
             List of semantic insights extracted from articles
         """
@@ -127,8 +134,7 @@ class AISemanticAnalyzer:
         # Process articles with concurrency control
         semaphore = asyncio.Semaphore(3)  # Limit to 3 concurrent requests
         tasks = [
-            self._analyze_single_article(semaphore, article)
-            for article in articles
+            self._analyze_single_article(semaphore, article) for article in articles
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -144,7 +150,9 @@ class AISemanticAnalyzer:
         self.logger.info(f"Completed semantic analysis for {len(insights)} articles")
         return insights
 
-    async def _analyze_single_article(self, semaphore: asyncio.Semaphore, article: ArticleContent) -> SemanticInsight:
+    async def _analyze_single_article(
+        self, semaphore: asyncio.Semaphore, article: ArticleContent
+    ) -> SemanticInsight:
         """Analyze a single article using AI"""
 
         async with semaphore:
@@ -153,6 +161,7 @@ class AISemanticAnalyzer:
             try:
                 # Create unique identifier for article
                 import hashlib
+
                 article_id = hashlib.md5(article.source_url.encode()).hexdigest()[:12]
 
                 # Prepare content for analysis
@@ -162,23 +171,29 @@ class AISemanticAnalyzer:
                 ai_response = await self._query_ai_for_semantics(analysis_content)
 
                 # Parse AI response into structured insights
-                insights = self._parse_ai_response(ai_response, article_id, article.source_url)
+                insights = self._parse_ai_response(
+                    ai_response, article_id, article.source_url
+                )
 
                 # Calculate processing time
                 processing_time = (datetime.now() - start_time).total_seconds()
                 insights.processing_time = processing_time
                 insights.ai_model_used = self.model
 
-                self.logger.debug(f"Analyzed article '{article.title[:50]}...' in {processing_time:.2f}s")
+                self.logger.debug(
+                    f"Analyzed article '{article.title[:50]}...' in {processing_time:.2f}s"
+                )
                 return insights
 
             except Exception as e:
-                self.logger.error(f"Error analyzing article '{article.title}': {str(e)}")
+                self.logger.error(
+                    f"Error analyzing article '{article.title}': {str(e)}"
+                )
                 # Return empty insights for failed analysis
                 return SemanticInsight(
                     article_id=f"error_{datetime.now().timestamp()}",
                     source_article=article.source_url,
-                    confidence_score=0.0
+                    confidence_score=0.0,
                 )
 
     def _prepare_content_for_analysis(self, article: ArticleContent) -> dict[str, Any]:
@@ -200,10 +215,10 @@ class AISemanticAnalyzer:
                 "metrics": article.technical_details.metrics,
                 "technologies": article.technical_details.technologies,
                 "company_names": article.technical_details.company_names,
-                "version_numbers": article.technical_details.version_numbers
+                "version_numbers": article.technical_details.version_numbers,
             },
             "content_pattern": article.content_patterns.pattern_type,
-            "word_count": article.word_count
+            "word_count": article.word_count,
         }
 
     async def _query_ai_for_semantics(self, content: dict[str, Any]) -> dict[str, Any]:
@@ -217,18 +232,12 @@ class AISemanticAnalyzer:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": self._get_system_prompt()
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
+                    {"role": "system", "content": self._get_system_prompt()},
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=self.temperature,
                 max_tokens=1500,  # Sufficient for structured analysis
-                response_format={"type": "json_object"}  # Request JSON response
+                response_format={"type": "json_object"},  # Request JSON response
             )
 
             # Parse JSON response
@@ -293,20 +302,20 @@ Prioritize concrete technical details over general concepts."""
         prompt = f"""
 Analyze this technical article for semantic insights:
 
-**Title:** {content['title']}
+**Title:** {content["title"]}
 
-**Source:** {content['source']}
+**Source:** {content["source"]}
 
-**Content Pattern:** {content['content_pattern']}
+**Content Pattern:** {content["content_pattern"]}
 
 **Technical Details Found:**
-- Metrics: {', '.join(content['technical_details']['metrics'][:5])}
-- Technologies: {', '.join(content['technical_details']['technologies'][:5])}
-- Companies: {', '.join(content['technical_details']['company_names'][:3])}
-- Versions: {', '.join(content['technical_details']['version_numbers'][:3])}
+- Metrics: {", ".join(content["technical_details"]["metrics"][:5])}
+- Technologies: {", ".join(content["technical_details"]["technologies"][:5])}
+- Companies: {", ".join(content["technical_details"]["company_names"][:3])}
+- Versions: {", ".join(content["technical_details"]["version_numbers"][:3])}
 
 **Article Content:**
-{content['content'][:3000]}
+{content["content"][:3000]}
 
 Perform deep semantic analysis focusing on:
 1. What specific technical problems are being solved?
@@ -323,7 +332,9 @@ Extract insights that would lead to specific blog titles like:
 
         return prompt.strip()
 
-    def _parse_ai_response(self, ai_response: dict[str, Any], article_id: str, source_url: str) -> SemanticInsight:
+    def _parse_ai_response(
+        self, ai_response: dict[str, Any], article_id: str, source_url: str
+    ) -> SemanticInsight:
         """Parse AI response into structured SemanticInsight"""
 
         try:
@@ -334,7 +345,7 @@ Extract insights that would lead to specific blog titles like:
                     topic=topic_data.get("topic", ""),
                     relevance_score=float(topic_data.get("relevance_score", 0.5)),
                     context=topic_data.get("context", ""),
-                    technical_depth=topic_data.get("technical_depth", "intermediate")
+                    technical_depth=topic_data.get("technical_depth", "intermediate"),
                 )
                 implicit_topics.append(topic)
 
@@ -343,11 +354,15 @@ Extract insights that would lead to specific blog titles like:
             for concept_data in ai_response.get("technical_concepts", []):
                 concept = TechnicalConcept(
                     concept=concept_data.get("concept", ""),
-                    implementation_approach=concept_data.get("implementation_approach", ""),
+                    implementation_approach=concept_data.get(
+                        "implementation_approach", ""
+                    ),
                     problem_solved=concept_data.get("problem_solved", ""),
                     technologies_used=concept_data.get("technologies_used", []),
-                    complexity_level=concept_data.get("complexity_level", "intermediate"),
-                    business_impact=concept_data.get("business_impact", "")
+                    complexity_level=concept_data.get(
+                        "complexity_level", "intermediate"
+                    ),
+                    business_impact=concept_data.get("business_impact", ""),
                 )
                 technical_concepts.append(concept)
 
@@ -363,7 +378,7 @@ Extract insights that would lead to specific blog titles like:
                 key_insights=ai_response.get("key_insights", []),
                 target_audience=ai_response.get("target_audience", "developers"),
                 content_angle=ai_response.get("content_angle", "technical"),
-                confidence_score=float(ai_response.get("confidence_score", 0.5))
+                confidence_score=float(ai_response.get("confidence_score", 0.5)),
             )
 
             return insight
@@ -371,9 +386,7 @@ Extract insights that would lead to specific blog titles like:
         except Exception as e:
             self.logger.error(f"Error parsing AI response: {str(e)}")
             return SemanticInsight(
-                article_id=article_id,
-                source_article=source_url,
-                confidence_score=0.1
+                article_id=article_id, source_article=source_url, confidence_score=0.1
             )
 
     def _get_fallback_analysis(self) -> dict[str, Any]:
@@ -388,23 +401,27 @@ Extract insights that would lead to specific blog titles like:
             "key_insights": ["AI analysis failed - using fallback"],
             "target_audience": "developers",
             "content_angle": "technical",
-            "confidence_score": 0.1
+            "confidence_score": 0.1,
         }
 
-    async def analyze_content_relationships(self, insights: list[SemanticInsight]) -> dict[str, Any]:
+    async def analyze_content_relationships(
+        self, insights: list[SemanticInsight]
+    ) -> dict[str, Any]:
         """
         Analyze relationships between multiple articles to identify patterns and trends
-        
+
         Args:
             insights: List of semantic insights to analyze for relationships
-            
+
         Returns:
             Dictionary containing relationship analysis
         """
         if len(insights) < 2:
             return {"relationships": [], "emerging_themes": []}
 
-        self.logger.info(f"Analyzing content relationships across {len(insights)} articles")
+        self.logger.info(
+            f"Analyzing content relationships across {len(insights)} articles"
+        )
 
         try:
             # Prepare data for relationship analysis
@@ -419,21 +436,25 @@ Extract insights that would lead to specific blog titles like:
             self.logger.error(f"Error in relationship analysis: {str(e)}")
             return {"relationships": [], "emerging_themes": []}
 
-    def _prepare_relationship_data(self, insights: list[SemanticInsight]) -> dict[str, Any]:
+    def _prepare_relationship_data(
+        self, insights: list[SemanticInsight]
+    ) -> dict[str, Any]:
         """Prepare insights data for relationship analysis"""
 
         # Extract key data for analysis
         articles_data = []
         for insight in insights[:10]:  # Limit to 10 most recent for token management
-            articles_data.append({
-                "source": insight.source_article,
-                "topics": [t.topic for t in insight.implicit_topics][:3],
-                "concepts": [c.concept for c in insight.technical_concepts][:3],
-                "problems": insight.problems_solved[:3],
-                "solutions": insight.solutions_implemented[:3],
-                "audience": insight.target_audience,
-                "angle": insight.content_angle
-            })
+            articles_data.append(
+                {
+                    "source": insight.source_article,
+                    "topics": [t.topic for t in insight.implicit_topics][:3],
+                    "concepts": [c.concept for c in insight.technical_concepts][:3],
+                    "problems": insight.problems_solved[:3],
+                    "solutions": insight.solutions_implemented[:3],
+                    "audience": insight.target_audience,
+                    "angle": insight.content_angle,
+                }
+            )
 
         return {"articles": articles_data}
 
@@ -476,12 +497,15 @@ Respond with JSON:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an expert at analyzing technical content relationships and trends."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "You are an expert at analyzing technical content relationships and trends.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
                 max_tokens=800,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
 
             return json.loads(response.choices[0].message.content)
@@ -492,5 +516,5 @@ Respond with JSON:
 
     async def close(self):
         """Close the async OpenAI client"""
-        if hasattr(self.client, 'close'):
+        if hasattr(self.client, "close"):
             await self.client.close()

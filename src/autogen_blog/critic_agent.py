@@ -22,7 +22,7 @@ from .multi_agent_models import (
 class CriticAgent(BaseAgent):
     """
     Agent responsible for reviewing and providing feedback on blog content.
-    
+
     Specializes in:
     - Evaluating content quality, structure, and clarity
     - Providing specific, actionable feedback
@@ -78,19 +78,19 @@ Always provide structured feedback in JSON format with scores, specific comments
         self,
         content: BlogContent,
         outline: ContentOutline,
-        quality_threshold: float = 7.0
+        quality_threshold: float = 7.0,
     ) -> ReviewFeedback:
         """
         Conduct a comprehensive review of blog content.
-        
+
         Args:
             content: The blog content to review
             outline: Original outline for comparison
             quality_threshold: Minimum score required for approval
-            
+
         Returns:
             ReviewFeedback with detailed evaluation and recommendations
-            
+
         Raises:
             ContentQualityError: If review process fails
         """
@@ -99,10 +99,7 @@ Always provide structured feedback in JSON format with scores, specific comments
             prompt = self._build_review_prompt(content, outline, quality_threshold)
 
             # Query the agent
-            response = await self.query_agent(
-                prompt,
-                message_type=MessageType.FEEDBACK
-            )
+            response = await self.query_agent(prompt, message_type=MessageType.FEEDBACK)
 
             # Parse the review response
             feedback = await self._parse_review_response(response, quality_threshold)
@@ -118,17 +115,15 @@ Always provide structured feedback in JSON format with scores, specific comments
             raise ContentQualityError(f"Content review failed: {e}")
 
     async def approve_content(
-        self,
-        content: BlogContent,
-        feedback: ReviewFeedback
+        self, content: BlogContent, feedback: ReviewFeedback
     ) -> bool:
         """
         Make final approval decision based on review feedback.
-        
+
         Args:
             content: The content being evaluated
             feedback: Review feedback with scores and recommendations
-            
+
         Returns:
             True if content is approved, False otherwise
         """
@@ -143,10 +138,19 @@ Always provide structured feedback in JSON format with scores, specific comments
 
         # Additional checks for critical issues
         critical_issues = [
-            improvement for improvement in feedback.improvements
-            if any(word in improvement.lower() for word in [
-                'critical', 'major', 'serious', 'missing', 'incorrect', 'error'
-            ])
+            improvement
+            for improvement in feedback.improvements
+            if any(
+                word in improvement.lower()
+                for word in [
+                    "critical",
+                    "major",
+                    "serious",
+                    "missing",
+                    "incorrect",
+                    "error",
+                ]
+            )
         ]
 
         if critical_issues:
@@ -157,10 +161,7 @@ Always provide structured feedback in JSON format with scores, specific comments
         return True
 
     def _build_review_prompt(
-        self,
-        content: BlogContent,
-        outline: ContentOutline,
-        quality_threshold: float
+        self, content: BlogContent, outline: ContentOutline, quality_threshold: float
     ) -> str:
         """Build the prompt for content review."""
         return f"""
@@ -171,8 +172,8 @@ BLOG CONTENT TO REVIEW:
 
 ORIGINAL OUTLINE FOR COMPARISON:
 Title: {outline.title}
-Sections: {', '.join([section.heading for section in outline.sections])}
-Target Keywords: {', '.join(outline.target_keywords)}
+Sections: {", ".join([section.heading for section in outline.sections])}
+Target Keywords: {", ".join(outline.target_keywords)}
 Estimated Length: {outline.estimated_word_count} words
 
 CONTENT METADATA:
@@ -237,20 +238,18 @@ Focus on providing specific, actionable feedback that will genuinely improve the
 """
 
     async def _parse_review_response(
-        self,
-        response: AgentMessage,
-        quality_threshold: float
+        self, response: AgentMessage, quality_threshold: float
     ) -> ReviewFeedback:
         """
         Parse the agent's review response into a ReviewFeedback object.
-        
+
         Args:
             response: Response from the critic agent
             quality_threshold: Minimum score for approval
-            
+
         Returns:
             ReviewFeedback object
-            
+
         Raises:
             ContentQualityError: If parsing fails or response is invalid
         """
@@ -268,8 +267,8 @@ Focus on providing specific, actionable feedback that will genuinely improve the
 
             # Determine approval status
             approved = (
-                feedback_data.get("approved", False) and
-                overall_score >= quality_threshold
+                feedback_data.get("approved", False)
+                and overall_score >= quality_threshold
             )
 
             # Create ReviewFeedback object
@@ -278,7 +277,7 @@ Focus on providing specific, actionable feedback that will genuinely improve the
                 strengths=strengths,
                 improvements=improvements,
                 approved=approved,
-                specific_feedback=specific_feedback
+                specific_feedback=specific_feedback,
             )
 
             # Validate feedback quality
@@ -293,16 +292,18 @@ Focus on providing specific, actionable feedback that will genuinely improve the
     def _validate_feedback_quality(self, feedback: ReviewFeedback) -> None:
         """
         Validate that the feedback meets quality standards.
-        
+
         Args:
             feedback: The feedback to validate
-            
+
         Raises:
             ContentQualityError: If feedback doesn't meet standards
         """
         # Check score validity
         if not 0 <= feedback.overall_score <= 10:
-            raise ContentQualityError(f"Invalid overall score: {feedback.overall_score}")
+            raise ContentQualityError(
+                f"Invalid overall score: {feedback.overall_score}"
+            )
 
         # Check for substantive strengths
         if len(feedback.strengths) < 1:
@@ -311,7 +312,8 @@ Focus on providing specific, actionable feedback that will genuinely improve the
         # Check that strengths are specific (not just generic praise)
         generic_strengths = ["good", "nice", "well done", "great"]
         specific_strengths = [
-            s for s in feedback.strengths
+            s
+            for s in feedback.strengths
             if not any(generic in s.lower() for generic in generic_strengths)
         ]
 
@@ -320,32 +322,38 @@ Focus on providing specific, actionable feedback that will genuinely improve the
 
         # Check for actionable improvements
         if feedback.overall_score < 9.0 and len(feedback.improvements) < 1:
-            self.logger.warning("Low-scored content should have improvement suggestions")
+            self.logger.warning(
+                "Low-scored content should have improvement suggestions"
+            )
 
         # Validate improvement specificity
         vague_words = ["better", "more", "improve", "enhance", "fix"]
         specific_improvements = [
-            imp for imp in feedback.improvements
-            if any(word in imp.lower() for word in ["add", "remove", "change", "rewrite", "expand"])
+            imp
+            for imp in feedback.improvements
+            if any(
+                word in imp.lower()
+                for word in ["add", "remove", "change", "rewrite", "expand"]
+            )
         ]
 
         if len(specific_improvements) < len(feedback.improvements) // 2:
-            self.logger.warning("Review contains too many vague improvement suggestions")
+            self.logger.warning(
+                "Review contains too many vague improvement suggestions"
+            )
 
         self.logger.info("Feedback validation passed")
 
     async def generate_improvement_priorities(
-        self,
-        feedback: ReviewFeedback,
-        content: BlogContent
+        self, feedback: ReviewFeedback, content: BlogContent
     ) -> dict[str, Any]:
         """
         Generate prioritized improvement recommendations based on feedback.
-        
+
         Args:
             feedback: Review feedback with suggestions
             content: Original content being reviewed
-            
+
         Returns:
             Prioritized improvement plan
         """
@@ -354,10 +362,7 @@ Focus on providing specific, actionable feedback that will genuinely improve the
             prompt = self._build_prioritization_prompt(feedback, content)
 
             # Query the agent
-            response = await self.query_agent(
-                prompt,
-                message_type=MessageType.FEEDBACK
-            )
+            response = await self.query_agent(prompt, message_type=MessageType.FEEDBACK)
 
             # Parse the prioritization response
             priorities = self.parse_json_response(response.content)
@@ -372,9 +377,7 @@ Focus on providing specific, actionable feedback that will genuinely improve the
             return self._create_basic_priorities(feedback)
 
     def _build_prioritization_prompt(
-        self,
-        feedback: ReviewFeedback,
-        content: BlogContent
+        self, feedback: ReviewFeedback, content: BlogContent
     ) -> str:
         """Build prompt for improvement prioritization."""
         improvements_text = "\\n".join([f"- {imp}" for imp in feedback.improvements])
@@ -423,7 +426,14 @@ Provide prioritized recommendations in this JSON format:
     def _create_basic_priorities(self, feedback: ReviewFeedback) -> dict[str, Any]:
         """Create basic improvement priorities as fallback."""
         # Categorize improvements based on keywords
-        critical_keywords = ["critical", "major", "serious", "missing", "incorrect", "error"]
+        critical_keywords = [
+            "critical",
+            "major",
+            "serious",
+            "missing",
+            "incorrect",
+            "error",
+        ]
         high_impact_keywords = ["unclear", "confusing", "incomplete", "expand", "add"]
         quick_win_keywords = ["formatting", "transition", "grammar", "typo", "minor"]
 
@@ -453,47 +463,41 @@ Provide prioritized recommendations in this JSON format:
                 "Step 1: Address critical issues",
                 "Step 2: Implement high-impact improvements",
                 "Step 3: Apply quick wins",
-                "Step 4: Consider optional enhancements"
-            ]
+                "Step 4: Consider optional enhancements",
+            ],
         }
 
     async def compare_content_versions(
         self,
         original_content: BlogContent,
         revised_content: BlogContent,
-        original_feedback: ReviewFeedback
+        original_feedback: ReviewFeedback,
     ) -> dict[str, Any]:
         """
         Compare original and revised content to assess improvement.
-        
+
         Args:
             original_content: The original content
             revised_content: The revised content
             original_feedback: Feedback that led to revision
-            
+
         Returns:
             Comparison analysis with improvement assessment
         """
         try:
             # Build comparison prompt
             prompt = self._build_comparison_prompt(
-                original_content,
-                revised_content,
-                original_feedback
+                original_content, revised_content, original_feedback
             )
 
             # Query the agent
-            response = await self.query_agent(
-                prompt,
-                message_type=MessageType.FEEDBACK
-            )
+            response = await self.query_agent(prompt, message_type=MessageType.FEEDBACK)
 
             # Parse comparison response
             comparison = self.parse_json_response(response.content)
             if not comparison:
                 comparison = self._create_basic_comparison(
-                    original_content,
-                    revised_content
+                    original_content, revised_content
                 )
 
             return comparison
@@ -506,10 +510,12 @@ Provide prioritized recommendations in this JSON format:
         self,
         original_content: BlogContent,
         revised_content: BlogContent,
-        original_feedback: ReviewFeedback
+        original_feedback: ReviewFeedback,
     ) -> str:
         """Build prompt for comparing content versions."""
-        addressed_issues = "\\n".join([f"- {imp}" for imp in original_feedback.improvements])
+        addressed_issues = "\\n".join(
+            [f"- {imp}" for imp in original_feedback.improvements]
+        )
 
         return f"""
 Please compare the original and revised versions of this blog content to assess how well the feedback was addressed:
@@ -552,13 +558,15 @@ Please analyze the revision and provide comparison in this JSON format:
 """
 
     def _create_basic_comparison(
-        self,
-        original_content: BlogContent,
-        revised_content: BlogContent
+        self, original_content: BlogContent, revised_content: BlogContent
     ) -> dict[str, Any]:
         """Create basic comparison as fallback."""
-        word_count_change = revised_content.metadata.word_count - original_content.metadata.word_count
-        section_count_change = len(revised_content.sections) - len(original_content.sections)
+        word_count_change = (
+            revised_content.metadata.word_count - original_content.metadata.word_count
+        )
+        section_count_change = len(revised_content.sections) - len(
+            original_content.sections
+        )
 
         changes_made = []
 
@@ -586,5 +594,5 @@ Please analyze the revision and provide comparison in this JSON format:
             "feedback_missed": [],
             "new_strengths": ["Improved based on editorial feedback"],
             "remaining_issues": [],
-            "overall_assessment": "Content has been revised to address feedback"
+            "overall_assessment": "Content has been revised to address feedback",
         }

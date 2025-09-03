@@ -13,7 +13,7 @@ from py_env import APP_NAME, APP_VERSION
 app = FastAPI(
     title=APP_NAME,
     version=APP_VERSION,
-    description="Automated blog generation using AI agents"
+    description="Automated blog generation using AI agents",
 )
 
 app.add_middleware(
@@ -24,14 +24,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Automated Blog API is running"}
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

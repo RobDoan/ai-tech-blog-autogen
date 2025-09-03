@@ -29,11 +29,13 @@ from .persona_system import (
 
 class ConfigurationError(BlogGenerationError):
     """Raised when configuration operations fail."""
+
     pass
 
 
 class PresetType(str, Enum):
     """Types of configuration presets."""
+
     BEGINNER_FRIENDLY = "beginner_friendly"
     TECHNICAL_DEEP_DIVE = "technical_deep_dive"
     CASUAL_CONVERSATION = "casual_conversation"
@@ -46,6 +48,7 @@ class PresetType(str, Enum):
 @dataclass
 class ConversationalPreferences:
     """User preferences for conversational content generation."""
+
     preferred_conversation_length: int = 12  # Number of exchanges
     max_exchanges_per_section: int = 6
     include_code_examples: bool = True
@@ -74,6 +77,7 @@ class ConversationalPreferences:
 @dataclass
 class DomainConfiguration:
     """Domain-specific configuration for conversations."""
+
     domain_name: str
     typical_technologies: list[str]
     common_challenges: list[str]
@@ -93,7 +97,7 @@ class ConversationalConfigManager:
     def __init__(self, config_dir: Path | None = None):
         """
         Initialize configuration manager.
-        
+
         Args:
             config_dir: Directory to store configuration files
         """
@@ -143,7 +147,7 @@ class ConversationalConfigManager:
             "beginner_friendly": self._create_beginner_friendly_personas(),
             "expert_level": self._create_expert_level_personas(),
             "casual_chat": self._create_casual_chat_personas(),
-            "formal_presentation": self._create_formal_presentation_personas()
+            "formal_presentation": self._create_formal_presentation_personas(),
         }
 
         for name, config in default_configs.items():
@@ -168,15 +172,15 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Ask basic questions about concepts",
                 "Request step-by-step explanations",
-                "Seek practical examples"
+                "Seek practical examples",
             ],
             typical_phrases=[
                 "I'm new to this, but",
                 "Could you explain what",
                 "I'm not sure I understand",
                 "Can you walk me through",
-                "What's the difference between"
-            ]
+                "What's the difference between",
+            ],
         )
 
         solution_provider = PersonaProfile(
@@ -190,15 +194,15 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Explain concepts clearly and simply",
                 "Use analogies and real-world examples",
-                "Encourage learning and experimentation"
+                "Encourage learning and experimentation",
             ],
             typical_phrases=[
                 "Great question!",
                 "Think of it like",
                 "Let me break that down",
                 "Here's a simple way to",
-                "Don't worry, this is common"
-            ]
+                "Don't worry, this is common",
+            ],
         )
 
         conversation_style = ConversationStyle(
@@ -207,7 +211,7 @@ class ConversationalConfigManager:
             dialogue_pace=DialoguePace.DETAILED,
             max_exchange_length=4,
             include_questions=True,
-            context_awareness=0.9
+            context_awareness=0.9,
         )
 
         return PersonaConfig(
@@ -216,7 +220,7 @@ class ConversationalConfigManager:
             conversation_style=conversation_style,
             domain_focus="web_development",
             target_audience="beginners",
-            dialogue_objective="educational"
+            dialogue_objective="educational",
         )
 
     def _create_expert_level_personas(self) -> PersonaConfig:
@@ -225,21 +229,25 @@ class ConversationalConfigManager:
             name="Alex",
             role="problem_presenter",
             background="Senior architect dealing with complex system challenges",
-            expertise_areas=["system architecture", "performance optimization", "scalability"],
+            expertise_areas=[
+                "system architecture",
+                "performance optimization",
+                "scalability",
+            ],
             communication_style=CommunicationStyle.TECHNICAL,
             personality_traits=["analytical", "precise", "performance-focused"],
             technical_level=TechnicalDepth.EXPERT,
             conversation_goals=[
                 "Discuss complex technical challenges",
                 "Explore trade-offs and alternatives",
-                "Focus on scalability and performance"
+                "Focus on scalability and performance",
             ],
             typical_phrases=[
                 "In high-throughput systems",
                 "We're seeing performance bottlenecks",
                 "The trade-off here is",
-                "At enterprise scale"
-            ]
+                "At enterprise scale",
+            ],
         )
 
         solution_provider = PersonaProfile(
@@ -253,14 +261,14 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Provide deep technical insights",
                 "Explain complex architectures",
-                "Share enterprise-level solutions"
+                "Share enterprise-level solutions",
             ],
             typical_phrases=[
                 "From an architectural perspective",
                 "The key insight is",
                 "In production environments",
-                "This pattern works well when"
-            ]
+                "This pattern works well when",
+            ],
         )
 
         conversation_style = ConversationStyle(
@@ -269,7 +277,7 @@ class ConversationalConfigManager:
             dialogue_pace=DialoguePace.MODERATE,
             max_exchange_length=5,
             include_questions=True,
-            context_awareness=0.95
+            context_awareness=0.95,
         )
 
         return PersonaConfig(
@@ -278,7 +286,7 @@ class ConversationalConfigManager:
             conversation_style=conversation_style,
             domain_focus="enterprise_architecture",
             target_audience="experts",
-            dialogue_objective="deep_technical"
+            dialogue_objective="deep_technical",
         )
 
     def _create_casual_chat_personas(self) -> PersonaConfig:
@@ -294,14 +302,14 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Share real project experiences",
                 "Discuss practical solutions",
-                "Keep things relatable"
+                "Keep things relatable",
             ],
             typical_phrases=[
                 "So I was working on this project",
                 "You know what I mean?",
                 "That's pretty cool",
-                "I've been there"
-            ]
+                "I've been there",
+            ],
         )
 
         solution_provider = PersonaProfile(
@@ -315,14 +323,14 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Share practical tips and tricks",
                 "Keep explanations accessible",
-                "Make learning enjoyable"
+                "Make learning enjoyable",
             ],
             typical_phrases=[
                 "Oh yeah, I love that approach",
                 "Here's what I usually do",
                 "That's a neat trick",
-                "Totally, and you can also"
-            ]
+                "Totally, and you can also",
+            ],
         )
 
         conversation_style = ConversationStyle(
@@ -332,7 +340,7 @@ class ConversationalConfigManager:
             max_exchange_length=3,
             include_questions=True,
             allow_interruptions=True,
-            context_awareness=0.8
+            context_awareness=0.8,
         )
 
         return PersonaConfig(
@@ -341,7 +349,7 @@ class ConversationalConfigManager:
             conversation_style=conversation_style,
             domain_focus="general_development",
             target_audience="developers",
-            dialogue_objective="casual_learning"
+            dialogue_objective="casual_learning",
         )
 
     def _create_formal_presentation_personas(self) -> PersonaConfig:
@@ -357,8 +365,8 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Present challenges clearly",
                 "Focus on business impact",
-                "Maintain professional tone"
-            ]
+                "Maintain professional tone",
+            ],
         )
 
         solution_provider = PersonaProfile(
@@ -372,8 +380,8 @@ class ConversationalConfigManager:
             conversation_goals=[
                 "Provide comprehensive solutions",
                 "Explain strategic benefits",
-                "Maintain professional authority"
-            ]
+                "Maintain professional authority",
+            ],
         )
 
         conversation_style = ConversationStyle(
@@ -382,7 +390,7 @@ class ConversationalConfigManager:
             dialogue_pace=DialoguePace.THOROUGH,
             max_exchange_length=6,
             include_questions=False,
-            context_awareness=0.95
+            context_awareness=0.95,
         )
 
         return PersonaConfig(
@@ -391,7 +399,7 @@ class ConversationalConfigManager:
             conversation_style=conversation_style,
             domain_focus="enterprise_solutions",
             target_audience="executives",
-            dialogue_objective="formal_presentation"
+            dialogue_objective="formal_presentation",
         )
 
     def _create_preset_configurations(self):
@@ -405,10 +413,9 @@ class ConversationalConfigManager:
                     include_code_examples=True,
                     avoid_advanced_concepts=True,
                     minimum_naturalness_score=0.8,
-                    preferred_code_languages=["python", "javascript"]
-                )
+                    preferred_code_languages=["python", "javascript"],
+                ),
             },
-
             PresetType.TECHNICAL_DEEP_DIVE: {
                 "description": "In-depth technical discussion for experienced developers",
                 "persona_config": "expert_level",
@@ -418,10 +425,9 @@ class ConversationalConfigManager:
                     include_performance_discussions=True,
                     include_security_considerations=True,
                     minimum_technical_accuracy=0.9,
-                    preferred_code_languages=["python", "java", "go", "rust"]
-                )
+                    preferred_code_languages=["python", "java", "go", "rust"],
+                ),
             },
-
             PresetType.CASUAL_CONVERSATION: {
                 "description": "Relaxed, informal conversation between developers",
                 "persona_config": "casual_chat",
@@ -429,10 +435,9 @@ class ConversationalConfigManager:
                     preferred_conversation_length=8,
                     allow_interruptions=True,
                     minimum_naturalness_score=0.9,
-                    include_practical_scenarios=True
-                )
+                    include_practical_scenarios=True,
+                ),
             },
-
             PresetType.TUTORIAL_STYLE: {
                 "description": "Step-by-step tutorial conversation",
                 "persona_config": "beginner_friendly",
@@ -441,60 +446,130 @@ class ConversationalConfigManager:
                     max_exchanges_per_section=4,
                     include_code_examples=True,
                     emphasize_best_practices=True,
-                    use_real_world_examples=True
-                )
-            }
+                    use_real_world_examples=True,
+                ),
+            },
         }
 
         for preset_type, config in presets.items():
             preset_file = self.presets_dir / f"{preset_type.value}.json"
             if not preset_file.exists():
                 try:
-                    with open(preset_file, 'w', encoding='utf-8') as f:
+                    with open(preset_file, "w", encoding="utf-8") as f:
                         json.dump(config, f, indent=2, default=str)
-                    self.logger.info(f"Created preset configuration: {preset_type.value}")
+                    self.logger.info(
+                        f"Created preset configuration: {preset_type.value}"
+                    )
                 except Exception as e:
-                    self.logger.error(f"Failed to create preset {preset_type.value}: {e}")
+                    self.logger.error(
+                        f"Failed to create preset {preset_type.value}: {e}"
+                    )
 
     def _create_domain_configurations(self):
         """Create domain-specific configurations."""
         domains = {
             "web_development": DomainConfiguration(
                 domain_name="Web Development",
-                typical_technologies=["HTML", "CSS", "JavaScript", "React", "Vue", "Angular", "Node.js"],
-                common_challenges=["responsive design", "performance optimization", "accessibility", "SEO"],
-                key_concepts=["DOM manipulation", "event handling", "API integration", "state management"],
-                recommended_personas={"beginner": "beginner_friendly", "advanced": "default"},
-                conversation_patterns=["problem-solution", "tutorial", "best-practices"],
-                technical_depth_preference=TechnicalDepth.INTERMEDIATE
+                typical_technologies=[
+                    "HTML",
+                    "CSS",
+                    "JavaScript",
+                    "React",
+                    "Vue",
+                    "Angular",
+                    "Node.js",
+                ],
+                common_challenges=[
+                    "responsive design",
+                    "performance optimization",
+                    "accessibility",
+                    "SEO",
+                ],
+                key_concepts=[
+                    "DOM manipulation",
+                    "event handling",
+                    "API integration",
+                    "state management",
+                ],
+                recommended_personas={
+                    "beginner": "beginner_friendly",
+                    "advanced": "default",
+                },
+                conversation_patterns=[
+                    "problem-solution",
+                    "tutorial",
+                    "best-practices",
+                ],
+                technical_depth_preference=TechnicalDepth.INTERMEDIATE,
             ),
-
             "backend_development": DomainConfiguration(
                 domain_name="Backend Development",
-                typical_technologies=["Python", "Java", "Node.js", "Go", "PostgreSQL", "MongoDB", "Redis"],
-                common_challenges=["scalability", "performance", "security", "data consistency"],
-                key_concepts=["API design", "database optimization", "caching", "microservices"],
+                typical_technologies=[
+                    "Python",
+                    "Java",
+                    "Node.js",
+                    "Go",
+                    "PostgreSQL",
+                    "MongoDB",
+                    "Redis",
+                ],
+                common_challenges=[
+                    "scalability",
+                    "performance",
+                    "security",
+                    "data consistency",
+                ],
+                key_concepts=[
+                    "API design",
+                    "database optimization",
+                    "caching",
+                    "microservices",
+                ],
                 recommended_personas={"beginner": "default", "expert": "expert_level"},
-                conversation_patterns=["architecture-discussion", "problem-solution", "performance-analysis"],
-                technical_depth_preference=TechnicalDepth.ADVANCED
+                conversation_patterns=[
+                    "architecture-discussion",
+                    "problem-solution",
+                    "performance-analysis",
+                ],
+                technical_depth_preference=TechnicalDepth.ADVANCED,
             ),
-
             "devops": DomainConfiguration(
                 domain_name="DevOps & Infrastructure",
-                typical_technologies=["Docker", "Kubernetes", "AWS", "Terraform", "Jenkins", "GitLab CI"],
-                common_challenges=["deployment automation", "monitoring", "scaling", "security"],
-                key_concepts=["CI/CD", "infrastructure as code", "containerization", "orchestration"],
+                typical_technologies=[
+                    "Docker",
+                    "Kubernetes",
+                    "AWS",
+                    "Terraform",
+                    "Jenkins",
+                    "GitLab CI",
+                ],
+                common_challenges=[
+                    "deployment automation",
+                    "monitoring",
+                    "scaling",
+                    "security",
+                ],
+                key_concepts=[
+                    "CI/CD",
+                    "infrastructure as code",
+                    "containerization",
+                    "orchestration",
+                ],
                 recommended_personas={"all_levels": "expert_level"},
-                conversation_patterns=["troubleshooting", "best-practices", "tool-comparison"],
-                technical_depth_preference=TechnicalDepth.EXPERT
-            )
+                conversation_patterns=[
+                    "troubleshooting",
+                    "best-practices",
+                    "tool-comparison",
+                ],
+                technical_depth_preference=TechnicalDepth.EXPERT,
+            ),
         }
 
         for domain_name, config in domains.items():
             domain_file = self.domains_dir / f"{domain_name}.json"
             if not domain_file.exists():
                 try:
-                    with open(domain_file, 'w', encoding='utf-8') as f:
+                    with open(domain_file, "w", encoding="utf-8") as f:
                         json.dump(asdict(config), f, indent=2, default=str)
                     self.logger.info(f"Created domain configuration: {domain_name}")
                 except Exception as e:
@@ -570,7 +645,7 @@ class ConversationalConfigManager:
             )
 
         try:
-            with open(preset_file, encoding='utf-8') as f:
+            with open(preset_file, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
             raise ConfigurationError(f"Failed to load preset '{preset_name}': {e}")
@@ -586,17 +661,19 @@ class ConversationalConfigManager:
             )
 
         try:
-            with open(domain_file, encoding='utf-8') as f:
+            with open(domain_file, encoding="utf-8") as f:
                 data = json.load(f)
                 return DomainConfiguration(**data)
         except Exception as e:
-            raise ConfigurationError(f"Failed to load domain config '{domain_name}': {e}")
+            raise ConfigurationError(
+                f"Failed to load domain config '{domain_name}': {e}"
+            )
 
     def create_custom_config_from_preset(
         self,
         preset_type: PresetType | str,
         custom_name: str,
-        modifications: dict[str, Any] | None = None
+        modifications: dict[str, Any] | None = None,
     ) -> PersonaConfig:
         """Create a custom configuration based on a preset."""
         try:
@@ -616,7 +693,9 @@ class ConversationalConfigManager:
             # Save as custom configuration
             self.save_persona_config(custom_name, base_config)
 
-            self.logger.info(f"Created custom configuration '{custom_name}' from preset '{preset_type}'")
+            self.logger.info(
+                f"Created custom configuration '{custom_name}' from preset '{preset_type}'"
+            )
             return base_config
 
         except Exception as e:
@@ -625,19 +704,25 @@ class ConversationalConfigManager:
     def _deep_update(self, base_dict: dict[str, Any], updates: dict[str, Any]) -> None:
         """Deep update a dictionary with another dictionary."""
         for key, value in updates.items():
-            if isinstance(value, dict) and key in base_dict and isinstance(base_dict[key], dict):
+            if (
+                isinstance(value, dict)
+                and key in base_dict
+                and isinstance(base_dict[key], dict)
+            ):
                 self._deep_update(base_dict[key], value)
             else:
                 base_dict[key] = value
 
-    def export_configuration(self, output_path: Path, include_defaults: bool = True) -> None:
+    def export_configuration(
+        self, output_path: Path, include_defaults: bool = True
+    ) -> None:
         """Export all configurations to a single file."""
         try:
             export_data = {
                 "personas": {},
                 "presets": {},
                 "domains": {},
-                "export_timestamp": str(datetime.now())
+                "export_timestamp": str(datetime.now()),
             }
 
             # Export personas
@@ -658,7 +743,7 @@ class ConversationalConfigManager:
 
             # Save export
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, 'w', encoding='utf-8') as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(export_data, f, indent=2, default=str)
 
             self.logger.info(f"Configuration exported to {output_path}")
@@ -672,14 +757,16 @@ class ConversationalConfigManager:
             if not import_path.exists():
                 raise ConfigurationError(f"Import file not found: {import_path}")
 
-            with open(import_path, encoding='utf-8') as f:
+            with open(import_path, encoding="utf-8") as f:
                 import_data = json.load(f)
 
             # Import personas
             for persona_name, persona_data in import_data.get("personas", {}).items():
                 config_file = self.personas_dir / f"{persona_name}.json"
                 if config_file.exists() and not overwrite:
-                    self.logger.warning(f"Skipping existing persona config: {persona_name}")
+                    self.logger.warning(
+                        f"Skipping existing persona config: {persona_name}"
+                    )
                     continue
 
                 config = PersonaConfig(**persona_data)
@@ -692,7 +779,7 @@ class ConversationalConfigManager:
                     self.logger.warning(f"Skipping existing preset: {preset_name}")
                     continue
 
-                with open(preset_file, 'w', encoding='utf-8') as f:
+                with open(preset_file, "w", encoding="utf-8") as f:
                     json.dump(preset_data, f, indent=2, default=str)
 
             # Import domains
@@ -702,7 +789,7 @@ class ConversationalConfigManager:
                     self.logger.warning(f"Skipping existing domain: {domain_name}")
                     continue
 
-                with open(domain_file, 'w', encoding='utf-8') as f:
+                with open(domain_file, "w", encoding="utf-8") as f:
                     json.dump(domain_data, f, indent=2, default=str)
 
             self.logger.info(f"Configuration imported from {import_path}")
@@ -733,9 +820,13 @@ class ConversationalConfigManager:
                 issues.append("Solution provider role must be 'solution_provider'")
 
             # Style consistency validation
-            if (config.conversation_style.technical_depth == TechnicalDepth.BEGINNER and
-                config.problem_presenter.technical_level == TechnicalDepth.EXPERT):
-                issues.append("Technical depth mismatch between conversation style and personas")
+            if (
+                config.conversation_style.technical_depth == TechnicalDepth.BEGINNER
+                and config.problem_presenter.technical_level == TechnicalDepth.EXPERT
+            ):
+                issues.append(
+                    "Technical depth mismatch between conversation style and personas"
+                )
 
         except Exception as e:
             issues.append(f"Validation error: {e}")
@@ -745,18 +836,29 @@ class ConversationalConfigManager:
 
 # Utility functions
 
-def get_recommended_config_for_topic(topic: str, target_audience: str = "intermediate") -> str:
+
+def get_recommended_config_for_topic(
+    topic: str, target_audience: str = "intermediate"
+) -> str:
     """Get recommended configuration name for a topic and audience."""
     topic_lower = topic.lower()
 
     # Simple heuristic-based recommendations
-    if any(word in topic_lower for word in ["beginner", "introduction", "basics", "getting started"]):
+    if any(
+        word in topic_lower
+        for word in ["beginner", "introduction", "basics", "getting started"]
+    ):
         return "beginner_friendly"
 
-    elif any(word in topic_lower for word in ["advanced", "expert", "deep dive", "architecture"]):
+    elif any(
+        word in topic_lower
+        for word in ["advanced", "expert", "deep dive", "architecture"]
+    ):
         return "expert_level"
 
-    elif any(word in topic_lower for word in ["chat", "discussion", "talk", "conversation"]):
+    elif any(
+        word in topic_lower for word in ["chat", "discussion", "talk", "conversation"]
+    ):
         return "casual_chat"
 
     elif target_audience == "beginner":

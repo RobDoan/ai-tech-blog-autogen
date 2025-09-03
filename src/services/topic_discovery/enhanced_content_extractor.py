@@ -22,17 +22,23 @@ from .config import RSS_SOURCES, RSSSourceConfig
 @dataclass
 class TechnicalDetails:
     """Extracted technical metrics and details from article content"""
+
     metrics: list[str] = field(default_factory=list)  # Performance numbers, percentages
     version_numbers: list[str] = field(default_factory=list)  # Software versions
     company_names: list[str] = field(default_factory=list)  # Organizations mentioned
-    technologies: list[str] = field(default_factory=list)  # Programming languages, frameworks
+    technologies: list[str] = field(
+        default_factory=list
+    )  # Programming languages, frameworks
     code_examples: list[str] = field(default_factory=list)  # Code snippets found
-    implementation_details: list[str] = field(default_factory=list)  # Technical approaches
+    implementation_details: list[str] = field(
+        default_factory=list
+    )  # Technical approaches
 
 
 @dataclass
 class ContentPatterns:
     """Identified content patterns that suggest actionable topics"""
+
     pattern_type: str  # "how-to", "performance", "comparison", "implementation"
     confidence_score: float  # 0-1 confidence in pattern detection
     key_phrases: list[str] = field(default_factory=list)
@@ -42,6 +48,7 @@ class ContentPatterns:
 @dataclass
 class ArticleContent:
     """Comprehensive article content for AI analysis"""
+
     title: str
     summary: str
     full_content: str | None
@@ -52,7 +59,9 @@ class ArticleContent:
 
     # Enhanced extraction data
     technical_details: TechnicalDetails = field(default_factory=TechnicalDetails)
-    content_patterns: ContentPatterns = field(default_factory=lambda: ContentPatterns("general", 0.0))
+    content_patterns: ContentPatterns = field(
+        default_factory=lambda: ContentPatterns("general", 0.0)
+    )
     raw_html: str | None = None
 
     # Metadata
@@ -83,74 +92,120 @@ class EnhancedContentExtractor:
 
         # Performance metrics patterns
         self.metrics_patterns = [
-            re.compile(r'\b(\d+(?:\.\d+)?%)\b'),  # Percentages
-            re.compile(r'\b(\d+(?:\.\d+)?\s*(?:ms|seconds?|minutes?|hours?))\b', re.IGNORECASE),  # Time
-            re.compile(r'\b(\d+(?:\.\d+)?\s*(?:MB|GB|KB|bytes?))\b', re.IGNORECASE),  # Memory/size
-            re.compile(r'\b(\d+(?:\.\d+)?\s*(?:x|times?)\s*(?:faster|slower|better|worse))\b', re.IGNORECASE),
-            re.compile(r'\b(improved?|reduced?|increased?)\s+(?:by\s+)?(\d+(?:\.\d+)?%?)\b', re.IGNORECASE),
-            re.compile(r'\b(\d+(?:\.\d+)?\s*(?:QPS|RPS|req/s|requests?\s*per\s*second))\b', re.IGNORECASE)
+            re.compile(r"\b(\d+(?:\.\d+)?%)\b"),  # Percentages
+            re.compile(
+                r"\b(\d+(?:\.\d+)?\s*(?:ms|seconds?|minutes?|hours?))\b", re.IGNORECASE
+            ),  # Time
+            re.compile(
+                r"\b(\d+(?:\.\d+)?\s*(?:MB|GB|KB|bytes?))\b", re.IGNORECASE
+            ),  # Memory/size
+            re.compile(
+                r"\b(\d+(?:\.\d+)?\s*(?:x|times?)\s*(?:faster|slower|better|worse))\b",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"\b(improved?|reduced?|increased?)\s+(?:by\s+)?(\d+(?:\.\d+)?%?)\b",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"\b(\d+(?:\.\d+)?\s*(?:QPS|RPS|req/s|requests?\s*per\s*second))\b",
+                re.IGNORECASE,
+            ),
         ]
 
         # Version number patterns
         self.version_patterns = [
-            re.compile(r'\b(v?\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z]\w*)?)\b'),  # Standard versions
-            re.compile(r'\b([A-Z][a-z]+\s+\d+(?:\.\d+)?)\b'),  # "React 19", "Python 3.12"
-            re.compile(r'\b(Node\.js\s+\d+(?:\.\d+)?)\b', re.IGNORECASE),
+            re.compile(
+                r"\b(v?\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z]\w*)?)\b"
+            ),  # Standard versions
+            re.compile(
+                r"\b([A-Z][a-z]+\s+\d+(?:\.\d+)?)\b"
+            ),  # "React 19", "Python 3.12"
+            re.compile(r"\b(Node\.js\s+\d+(?:\.\d+)?)\b", re.IGNORECASE),
         ]
 
         # Company/organization patterns
         self.company_patterns = [
-            re.compile(r'\b(Netflix|Google|Facebook|Meta|Amazon|AWS|Microsoft|Apple|Stripe|Uber|Airbnb|Spotify|Twitter|X|LinkedIn|GitHub|GitLab|Vercel|Netlify|Cloudflare)\b'),
-            re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:team|engineering|developers?|announced|released|built|created|launched)\b')
+            re.compile(
+                r"\b(Netflix|Google|Facebook|Meta|Amazon|AWS|Microsoft|Apple|Stripe|Uber|Airbnb|Spotify|Twitter|X|LinkedIn|GitHub|GitLab|Vercel|Netlify|Cloudflare)\b"
+            ),
+            re.compile(
+                r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:team|engineering|developers?|announced|released|built|created|launched)\b"
+            ),
         ]
 
         # Technology patterns
         self.tech_patterns = [
-            re.compile(r'\b(React|Vue|Angular|Next\.js|Node\.js|Python|JavaScript|TypeScript|Go|Rust|Java|C\+\+|C#|Swift|Kotlin)\b'),
-            re.compile(r'\b(Docker|Kubernetes|AWS|Azure|GCP|PostgreSQL|MySQL|MongoDB|Redis|Elasticsearch)\b'),
-            re.compile(r'\b(GraphQL|REST|API|microservices?|serverless|containerization|CI/CD)\b', re.IGNORECASE)
+            re.compile(
+                r"\b(React|Vue|Angular|Next\.js|Node\.js|Python|JavaScript|TypeScript|Go|Rust|Java|C\+\+|C#|Swift|Kotlin)\b"
+            ),
+            re.compile(
+                r"\b(Docker|Kubernetes|AWS|Azure|GCP|PostgreSQL|MySQL|MongoDB|Redis|Elasticsearch)\b"
+            ),
+            re.compile(
+                r"\b(GraphQL|REST|API|microservices?|serverless|containerization|CI/CD)\b",
+                re.IGNORECASE,
+            ),
         ]
 
         # Actionable content patterns
         self.actionable_patterns = {
             "how-to": [
-                re.compile(r'\bhow\s+to\b', re.IGNORECASE),
-                re.compile(r'\bstep\s+by\s+step\b', re.IGNORECASE),
-                re.compile(r'\bguide\s+to\b', re.IGNORECASE),
-                re.compile(r'\btutorial\b', re.IGNORECASE)
+                re.compile(r"\bhow\s+to\b", re.IGNORECASE),
+                re.compile(r"\bstep\s+by\s+step\b", re.IGNORECASE),
+                re.compile(r"\bguide\s+to\b", re.IGNORECASE),
+                re.compile(r"\btutorial\b", re.IGNORECASE),
             ],
             "performance": [
-                re.compile(r'\b(?:improved?|optimized?|faster|better|enhanced?)\b', re.IGNORECASE),
-                re.compile(r'\b(?:performance|speed|efficiency|latency|throughput)\b', re.IGNORECASE),
-                re.compile(r'\b(?:reduced?|decreased?|minimized?)\s+(?:by\s+)?\d+', re.IGNORECASE)
+                re.compile(
+                    r"\b(?:improved?|optimized?|faster|better|enhanced?)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:performance|speed|efficiency|latency|throughput)\b",
+                    re.IGNORECASE,
+                ),
+                re.compile(
+                    r"\b(?:reduced?|decreased?|minimized?)\s+(?:by\s+)?\d+",
+                    re.IGNORECASE,
+                ),
             ],
             "comparison": [
-                re.compile(r'\bvs\.?\s+\b', re.IGNORECASE),
-                re.compile(r'\bcompared?\s+(?:to|with)\b', re.IGNORECASE),
-                re.compile(r'\b(?:better|worse|faster|slower)\s+than\b', re.IGNORECASE),
-                re.compile(r'\b(?:advantages?|disadvantages?|pros?|cons?)\s+of\b', re.IGNORECASE)
+                re.compile(r"\bvs\.?\s+\b", re.IGNORECASE),
+                re.compile(r"\bcompared?\s+(?:to|with)\b", re.IGNORECASE),
+                re.compile(r"\b(?:better|worse|faster|slower)\s+than\b", re.IGNORECASE),
+                re.compile(
+                    r"\b(?:advantages?|disadvantages?|pros?|cons?)\s+of\b",
+                    re.IGNORECASE,
+                ),
             ],
             "implementation": [
-                re.compile(r'\bimplemented?|implementing|implementation\b', re.IGNORECASE),
-                re.compile(r'\bbuilt|building|creating|developed?\b', re.IGNORECASE),
-                re.compile(r'\busing|with|via|through\b', re.IGNORECASE)
-            ]
+                re.compile(
+                    r"\bimplemented?|implementing|implementation\b", re.IGNORECASE
+                ),
+                re.compile(r"\bbuilt|building|creating|developed?\b", re.IGNORECASE),
+                re.compile(r"\busing|with|via|through\b", re.IGNORECASE),
+            ],
         }
 
-    async def extract_article_content(self, source_configs: list[RSSSourceConfig] | None = None) -> list[ArticleContent]:
+    async def extract_article_content(
+        self, source_configs: list[RSSSourceConfig] | None = None
+    ) -> list[ArticleContent]:
         """
         Extract comprehensive article content from RSS sources
-        
+
         Args:
             source_configs: RSS sources to process (uses default if None)
-            
+
         Returns:
             List of extracted and analyzed article content
         """
         if source_configs is None:
             source_configs = RSS_SOURCES
 
-        self.logger.info(f"Starting enhanced content extraction from {len(source_configs)} RSS sources")
+        self.logger.info(
+            f"Starting enhanced content extraction from {len(source_configs)} RSS sources"
+        )
 
         # Initialize HTTP session
         timeout = aiohttp.ClientTimeout(total=self.timeout)
@@ -175,10 +230,14 @@ class EnhancedContentExtractor:
                     self.logger.error(f"RSS processing error: {str(result)}")
 
         self.session = None
-        self.logger.info(f"Extracted {len(all_articles)} articles with enhanced content")
+        self.logger.info(
+            f"Extracted {len(all_articles)} articles with enhanced content"
+        )
         return all_articles
 
-    async def _process_rss_source(self, semaphore: asyncio.Semaphore, source_config: RSSSourceConfig) -> list[ArticleContent]:
+    async def _process_rss_source(
+        self, semaphore: asyncio.Semaphore, source_config: RSSSourceConfig
+    ) -> list[ArticleContent]:
         """Process a single RSS source with enhanced content extraction"""
 
         async with semaphore:
@@ -188,7 +247,9 @@ class EnhancedContentExtractor:
                 # Fetch RSS feed
                 async with self.session.get(source_config.rss_url) as response:
                     if response.status != 200:
-                        self.logger.error(f"Failed to fetch RSS from {source_config.name}: HTTP {response.status}")
+                        self.logger.error(
+                            f"Failed to fetch RSS from {source_config.name}: HTTP {response.status}"
+                        )
                         return []
 
                     rss_content = await response.text()
@@ -196,7 +257,9 @@ class EnhancedContentExtractor:
                 # Parse RSS feed
                 feed = feedparser.parse(rss_content)
                 if not feed.entries:
-                    self.logger.warning(f"No entries found in RSS feed: {source_config.name}")
+                    self.logger.warning(
+                        f"No entries found in RSS feed: {source_config.name}"
+                    )
                     return []
 
                 # Process entries (limit to recent ones for performance)
@@ -205,32 +268,42 @@ class EnhancedContentExtractor:
                 articles = []
                 for entry in recent_entries:
                     try:
-                        article = await self._extract_article_details(entry, source_config)
+                        article = await self._extract_article_details(
+                            entry, source_config
+                        )
                         if article:
                             articles.append(article)
                     except Exception as e:
-                        self.logger.error(f"Error processing article '{entry.get('title', 'Unknown')}': {str(e)}")
+                        self.logger.error(
+                            f"Error processing article '{entry.get('title', 'Unknown')}': {str(e)}"
+                        )
 
-                self.logger.info(f"Processed {len(articles)} articles from {source_config.name}")
+                self.logger.info(
+                    f"Processed {len(articles)} articles from {source_config.name}"
+                )
                 return articles
 
             except Exception as e:
-                self.logger.error(f"Error processing RSS source {source_config.name}: {str(e)}")
+                self.logger.error(
+                    f"Error processing RSS source {source_config.name}: {str(e)}"
+                )
                 return []
 
-    async def _extract_article_details(self, entry: dict, source_config: RSSSourceConfig) -> ArticleContent | None:
+    async def _extract_article_details(
+        self, entry: dict, source_config: RSSSourceConfig
+    ) -> ArticleContent | None:
         """Extract comprehensive details from a single RSS entry"""
 
         try:
             # Basic RSS data
-            title = entry.get('title', '').strip()
+            title = entry.get("title", "").strip()
             if not title:
                 return None
 
-            summary = entry.get('summary', '') or entry.get('description', '')
-            source_url = entry.get('link', '')
-            published_date = self._parse_date(entry.get('published'))
-            author = entry.get('author')
+            summary = entry.get("summary", "") or entry.get("description", "")
+            source_url = entry.get("link", "")
+            published_date = self._parse_date(entry.get("published"))
+            author = entry.get("author")
 
             # Initialize article content
             article = ArticleContent(
@@ -240,25 +313,35 @@ class EnhancedContentExtractor:
                 source_url=source_url,
                 source_name=source_config.name,
                 published_date=published_date,
-                author=author
+                author=author,
             )
 
             # Try to fetch full article content
             if source_url:
-                full_content, raw_html = await self._fetch_full_article_content(source_url)
+                full_content, raw_html = await self._fetch_full_article_content(
+                    source_url
+                )
                 article.full_content = full_content
                 article.raw_html = raw_html
-                article.word_count = len(full_content.split()) if full_content else len(article.summary.split())
+                article.word_count = (
+                    len(full_content.split())
+                    if full_content
+                    else len(article.summary.split())
+                )
             else:
                 article.word_count = len(article.summary.split())
 
             # Extract technical details
             content_to_analyze = article.full_content or article.summary
-            article.technical_details = self._extract_technical_details(content_to_analyze)
+            article.technical_details = self._extract_technical_details(
+                content_to_analyze
+            )
 
             # Identify content patterns
             try:
-                article.content_patterns = self._identify_content_patterns(title, content_to_analyze)
+                article.content_patterns = self._identify_content_patterns(
+                    title, content_to_analyze
+                )
             except Exception as e:
                 self.logger.error(f"Error in _identify_content_patterns: {str(e)}")
                 # Create a default pattern as fallback
@@ -266,7 +349,7 @@ class EnhancedContentExtractor:
                     pattern_type="general",
                     confidence_score=0.1,
                     key_phrases=[],
-                    actionable_indicators=[]
+                    actionable_indicators=[],
                 )
 
             # Calculate content quality score
@@ -278,47 +361,53 @@ class EnhancedContentExtractor:
             self.logger.error(f"Error extracting article details: {str(e)}")
             return None
 
-    async def _fetch_full_article_content(self, url: str) -> tuple[str | None, str | None]:
+    async def _fetch_full_article_content(
+        self, url: str
+    ) -> tuple[str | None, str | None]:
         """Fetch and extract full article content from URL"""
 
         try:
             async with self.session.get(url) as response:
                 if response.status != 200:
-                    self.logger.warning(f"Failed to fetch full content from {url}: HTTP {response.status}")
+                    self.logger.warning(
+                        f"Failed to fetch full content from {url}: HTTP {response.status}"
+                    )
                     return None, None
 
                 raw_html = await response.text()
 
                 # Parse HTML and extract main content
-                soup = BeautifulSoup(raw_html, 'html.parser')
+                soup = BeautifulSoup(raw_html, "html.parser")
 
                 # Remove unwanted elements
-                for tag in soup(['script', 'style', 'nav', 'footer', 'aside', 'header']):
+                for tag in soup(
+                    ["script", "style", "nav", "footer", "aside", "header"]
+                ):
                     tag.decompose()
 
                 # Try common content selectors
                 content_selectors = [
-                    'article',
-                    '.post-content',
-                    '.entry-content',
-                    '.content',
-                    'main',
-                    '.article-body',
-                    '#content'
+                    "article",
+                    ".post-content",
+                    ".entry-content",
+                    ".content",
+                    "main",
+                    ".article-body",
+                    "#content",
                 ]
 
                 content_text = None
                 for selector in content_selectors:
                     content_elem = soup.select_one(selector)
                     if content_elem:
-                        content_text = content_elem.get_text(separator=' ', strip=True)
+                        content_text = content_elem.get_text(separator=" ", strip=True)
                         break
 
                 # Fallback to body content
                 if not content_text:
-                    body = soup.find('body')
+                    body = soup.find("body")
                     if body:
-                        content_text = body.get_text(separator=' ', strip=True)
+                        content_text = body.get_text(separator=" ", strip=True)
 
                 # Clean and limit content
                 if content_text:
@@ -326,7 +415,7 @@ class EnhancedContentExtractor:
                     # Limit to reasonable size (first 5000 words for analysis)
                     words = content_text.split()
                     if len(words) > 5000:
-                        content_text = ' '.join(words[:5000])
+                        content_text = " ".join(words[:5000])
 
                 return content_text, raw_html[:10000]  # Limit raw HTML storage
 
@@ -367,19 +456,29 @@ class EnhancedContentExtractor:
             details.technologies.extend(matches)
 
         # Extract code examples (simple heuristic)
-        code_indicators = ['```', 'function ', 'def ', 'class ', 'import ', '  return', '  if ']
+        code_indicators = [
+            "```",
+            "function ",
+            "def ",
+            "class ",
+            "import ",
+            "  return",
+            "  if ",
+        ]
         for indicator in code_indicators:
             if indicator in content:
                 # Find code blocks around the indicator
-                lines = content.split('\n')
+                lines = content.split("\n")
                 for i, line in enumerate(lines):
                     if indicator in line:
                         # Capture surrounding context as code example
-                        start = max(0, i-2)
-                        end = min(len(lines), i+5)
-                        code_snippet = '\n'.join(lines[start:end]).strip()
+                        start = max(0, i - 2)
+                        end = min(len(lines), i + 5)
+                        code_snippet = "\n".join(lines[start:end]).strip()
                         if len(code_snippet) > 20:  # Only meaningful snippets
-                            details.code_examples.append(code_snippet[:200])  # Limit length
+                            details.code_examples.append(
+                                code_snippet[:200]
+                            )  # Limit length
                         break
 
         # Deduplicate lists
@@ -421,14 +520,14 @@ class EnhancedContentExtractor:
                 pattern_type=best_pattern[0],
                 confidence_score=best_pattern[1],
                 key_phrases=all_key_phrases[:10],  # Limit to top 10
-                actionable_indicators=self._find_actionable_indicators(title, content)
+                actionable_indicators=self._find_actionable_indicators(title, content),
             )
         else:
             return ContentPatterns(
                 pattern_type="general",
                 confidence_score=0.1,
                 key_phrases=[],
-                actionable_indicators=[]
+                actionable_indicators=[],
             )
 
     def _find_actionable_indicators(self, title: str, content: str) -> list[str]:
@@ -439,10 +538,22 @@ class EnhancedContentExtractor:
 
         # Look for specific actionable phrases
         actionable_phrases = [
-            "step by step", "how to", "guide to", "tutorial",
-            "improved by", "reduced by", "increased by", "faster than",
-            "vs", "compared to", "better than", "worse than",
-            "implementation", "building", "creating", "developing"
+            "step by step",
+            "how to",
+            "guide to",
+            "tutorial",
+            "improved by",
+            "reduced by",
+            "increased by",
+            "faster than",
+            "vs",
+            "compared to",
+            "better than",
+            "worse than",
+            "implementation",
+            "building",
+            "creating",
+            "developing",
         ]
 
         for phrase in actionable_phrases:
@@ -469,11 +580,11 @@ class EnhancedContentExtractor:
         # Technical detail richness
         tech_details = article.technical_details
         tech_score = (
-            len(tech_details.metrics) * 0.1 +
-            len(tech_details.version_numbers) * 0.1 +
-            len(tech_details.company_names) * 0.1 +
-            len(tech_details.technologies) * 0.1 +
-            len(tech_details.code_examples) * 0.1
+            len(tech_details.metrics) * 0.1
+            + len(tech_details.version_numbers) * 0.1
+            + len(tech_details.company_names) * 0.1
+            + len(tech_details.technologies) * 0.1
+            + len(tech_details.code_examples) * 0.1
         )
         score += min(tech_score, 0.4)
 
@@ -491,12 +602,14 @@ class EnhancedContentExtractor:
 
         try:
             # Try feedparser's parsed time first
-            if hasattr(date_str, 'struct_time'):
+            if hasattr(date_str, "struct_time"):
                 import time
+
                 return datetime.fromtimestamp(time.mktime(date_str), tz=UTC)
 
             # Fallback to string parsing
             from dateutil import parser
+
             return parser.parse(date_str).replace(tzinfo=UTC)
 
         except Exception:
@@ -508,8 +621,8 @@ class EnhancedContentExtractor:
         if not html_content:
             return ""
 
-        soup = BeautifulSoup(html_content, 'html.parser')
-        return soup.get_text(separator=' ', strip=True)
+        soup = BeautifulSoup(html_content, "html.parser")
+        return soup.get_text(separator=" ", strip=True)
 
     def _clean_content_text(self, text: str) -> str:
         """Clean and normalize extracted content text"""
@@ -518,16 +631,16 @@ class EnhancedContentExtractor:
             return ""
 
         # Remove excessive whitespace
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
 
         # Remove common noise patterns
         noise_patterns = [
-            r'\b(?:Click here|Read more|Continue reading|Share this|Subscribe|Newsletter)\b',
-            r'\b(?:Advertisement|Sponsored|Promoted)\b',
-            r'\b(?:Cookie|Privacy|Terms of Service|Terms of Use)\b'
+            r"\b(?:Click here|Read more|Continue reading|Share this|Subscribe|Newsletter)\b",
+            r"\b(?:Advertisement|Sponsored|Promoted)\b",
+            r"\b(?:Cookie|Privacy|Terms of Service|Terms of Use)\b",
         ]
 
         for pattern in noise_patterns:
-            text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE)
 
         return text.strip()

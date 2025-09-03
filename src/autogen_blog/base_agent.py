@@ -50,7 +50,7 @@ class BaseAgent(ABC):
         self.agent = AssistantAgent(
             name=self.name,
             model_client=self.model,
-            system_message=self._get_system_message()
+            system_message=self._get_system_message(),
         )
 
     def _setup_logger(self) -> logging.Logger:
@@ -61,7 +61,7 @@ class BaseAgent(ABC):
         if not logger.handlers:
             handler = logging.StreamHandler()
             formatter = logging.Formatter(
-                f'%(asctime)s - {self.name} - %(levelname)s - %(message)s'
+                f"%(asctime)s - {self.name} - %(levelname)s - %(message)s"
             )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
@@ -74,7 +74,7 @@ class BaseAgent(ABC):
             model=self.config.model,
             api_key=self.config.openai_api_key,
             temperature=self.config.temperature,
-            max_tokens=self.config.max_tokens
+            max_tokens=self.config.max_tokens,
         )
 
     @abstractmethod
@@ -86,7 +86,7 @@ class BaseAgent(ABC):
         self,
         prompt: str,
         message_type: MessageType = MessageType.CONTENT,
-        max_retries: int | None = None
+        max_retries: int | None = None,
     ) -> AgentMessage:
         """
         Query the agent with retry logic and structured response handling.
@@ -106,7 +106,9 @@ class BaseAgent(ABC):
 
         for attempt in range(max_retries + 1):
             try:
-                self.logger.info(f"Sending {message_type.value} query (attempt {attempt + 1})")
+                self.logger.info(
+                    f"Sending {message_type.value} query (attempt {attempt + 1})"
+                )
 
                 # Create text message for AutoGen
                 message = TextMessage(content=prompt, source="user")
@@ -114,7 +116,7 @@ class BaseAgent(ABC):
                 # Query the agent with timeout
                 response = await asyncio.wait_for(
                     self.agent.on_messages([message], cancellation_token=None),
-                    timeout=self.config.timeout_seconds
+                    timeout=self.config.timeout_seconds,
                 )
 
                 # Extract response content
@@ -128,7 +130,7 @@ class BaseAgent(ABC):
                         message_type=message_type,
                         content=content,
                         timestamp=datetime.now(),
-                        metadata={"attempt": attempt + 1, "success": True}
+                        metadata={"attempt": attempt + 1, "success": True},
                     )
                 else:
                     raise AgentCommunicationError("Agent returned empty response")
@@ -136,16 +138,20 @@ class BaseAgent(ABC):
             except TimeoutError as e:
                 self.logger.warning(f"Attempt {attempt + 1} timed out: {e}")
                 if attempt == max_retries:
-                    raise AgentCommunicationError(f"Agent query timed out after {max_retries + 1} attempts")
+                    raise AgentCommunicationError(
+                        f"Agent query timed out after {max_retries + 1} attempts"
+                    )
 
             except Exception as e:
                 self.logger.warning(f"Attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries:
-                    raise AgentCommunicationError(f"Agent query failed after {max_retries + 1} attempts: {e}")
+                    raise AgentCommunicationError(
+                        f"Agent query failed after {max_retries + 1} attempts: {e}"
+                    )
 
             # Exponential backoff between retries
             if attempt < max_retries:
-                wait_time = 2 ** attempt
+                wait_time = 2**attempt
                 self.logger.info(f"Retrying in {wait_time} seconds...")
                 await asyncio.sleep(wait_time)
 
@@ -179,7 +185,7 @@ class BaseAgent(ABC):
 
             # Try to extract JSON from code blocks without language specification
             if "```" in response:
-                lines = response.split('\n')
+                lines = response.split("\n")
                 in_code_block = False
                 json_lines = []
 
@@ -187,8 +193,8 @@ class BaseAgent(ABC):
                     if line.strip() == "```":
                         if in_code_block:
                             # End of code block, try to parse accumulated JSON
-                            json_str = '\n'.join(json_lines).strip()
-                            if json_str.startswith('{') or json_str.startswith('['):
+                            json_str = "\n".join(json_lines).strip()
+                            if json_str.startswith("{") or json_str.startswith("["):
                                 try:
                                     return json.loads(json_str)
                                 except json.JSONDecodeError:
@@ -201,7 +207,9 @@ class BaseAgent(ABC):
             self.logger.warning(f"Failed to parse JSON response: {response[:200]}...")
             return None
 
-    def extract_structured_data(self, response: str, expected_keys: list[str]) -> dict[str, Any]:
+    def extract_structured_data(
+        self, response: str, expected_keys: list[str]
+    ) -> dict[str, Any]:
         """
         Extract structured data from agent response, with fallback parsing.
 
@@ -219,16 +227,16 @@ class BaseAgent(ABC):
 
         # Fallback: text parsing for key-value pairs
         result = {}
-        lines = response.split('\n')
+        lines = response.split("\n")
 
         for line in lines:
             line = line.strip()
-            if ':' in line:
+            if ":" in line:
                 for key in expected_keys:
-                    if line.lower().startswith(key.lower() + ':'):
-                        value = line.split(':', 1)[1].strip()
+                    if line.lower().startswith(key.lower() + ":"):
+                        value = line.split(":", 1)[1].strip()
                         # Clean up common formatting
-                        value = value.strip('"\'`')
+                        value = value.strip("\"'`")
                         result[key] = value
                         break
 
@@ -236,11 +244,15 @@ class BaseAgent(ABC):
         for key in expected_keys:
             if key not in result:
                 result[key] = ""
-                self.logger.warning(f"Missing key '{key}' in agent response, using empty fallback")
+                self.logger.warning(
+                    f"Missing key '{key}' in agent response, using empty fallback"
+                )
 
         return result
 
-    async def validate_response(self, response: AgentMessage, validation_criteria: dict[str, Any]) -> bool:
+    async def validate_response(
+        self, response: AgentMessage, validation_criteria: dict[str, Any]
+    ) -> bool:
         """
         Validate agent response against criteria.
 
@@ -256,7 +268,9 @@ class BaseAgent(ABC):
         # Check minimum length
         if "min_length" in validation_criteria:
             if len(content) < validation_criteria["min_length"]:
-                self.logger.warning(f"Response too short: {len(content)} < {validation_criteria['min_length']}")
+                self.logger.warning(
+                    f"Response too short: {len(content)} < {validation_criteria['min_length']}"
+                )
                 return False
 
         # Check for required keywords
@@ -301,8 +315,8 @@ class BaseAgent(ABC):
             metadata={
                 "error_type": type(error).__name__,
                 "context": context,
-                "success": False
-            }
+                "success": False,
+            },
         )
 
 
@@ -342,7 +356,7 @@ class MessageParser:
         current_section = None
         current_content = []
 
-        for line in content.split('\n'):
+        for line in content.split("\n"):
             line_lower = line.strip().lower()
 
             # Check if this line is a section marker
@@ -350,7 +364,7 @@ class MessageParser:
                 if marker.lower() in line_lower:
                     # Save previous section if it exists
                     if current_section:
-                        sections[current_section] = '\n'.join(current_content).strip()
+                        sections[current_section] = "\n".join(current_content).strip()
 
                     # Start new section
                     current_section = marker
@@ -363,7 +377,7 @@ class MessageParser:
 
         # Save the last section
         if current_section:
-            sections[current_section] = '\n'.join(current_content).strip()
+            sections[current_section] = "\n".join(current_content).strip()
 
         return sections
 
@@ -379,11 +393,11 @@ class MessageParser:
             Cleaned content
         """
         # Remove excessive whitespace
-        content = '\n'.join(line.strip() for line in content.split('\n'))
+        content = "\n".join(line.strip() for line in content.split("\n"))
 
         # Remove multiple consecutive empty lines
-        while '\n\n\n' in content:
-            content = content.replace('\n\n\n', '\n\n')
+        while "\n\n\n" in content:
+            content = content.replace("\n\n\n", "\n\n")
 
         # Strip leading/trailing whitespace
         content = content.strip()
@@ -411,13 +425,19 @@ class AgentState:
 
     def get_messages_by_agent(self, agent_name: str) -> list[AgentMessage]:
         """Get all messages from a specific agent."""
-        return [msg for msg in self.conversation_history if msg.agent_name == agent_name]
+        return [
+            msg for msg in self.conversation_history if msg.agent_name == agent_name
+        ]
 
     def get_messages_by_type(self, message_type: MessageType) -> list[AgentMessage]:
         """Get all messages of a specific type."""
-        return [msg for msg in self.conversation_history if msg.message_type == message_type]
+        return [
+            msg for msg in self.conversation_history if msg.message_type == message_type
+        ]
 
-    def get_latest_message_by_type(self, message_type: MessageType) -> AgentMessage | None:
+    def get_latest_message_by_type(
+        self, message_type: MessageType
+    ) -> AgentMessage | None:
         """Get the most recent message of a specific type."""
         messages = self.get_messages_by_type(message_type)
         return messages[-1] if messages else None

@@ -55,13 +55,13 @@ def setup_logging(verbose: bool = False) -> None:
 
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     # Reduce noise from external libraries
-    logging.getLogger('httpx').setLevel(logging.WARNING)
-    logging.getLogger('openai').setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
 
 
 def load_config() -> tuple[AgentConfig, WorkflowConfig]:
@@ -79,7 +79,7 @@ def load_config() -> tuple[AgentConfig, WorkflowConfig]:
         temperature=OPENAI_TEMPERATURE,
         max_tokens=OPENAI_MAX_TOKENS,
         openai_api_key=OPENAI_API_KEY,
-        timeout_seconds=AGENT_TIMEOUT
+        timeout_seconds=AGENT_TIMEOUT,
     )
 
     # Workflow configuration using centralized config values
@@ -89,7 +89,7 @@ def load_config() -> tuple[AgentConfig, WorkflowConfig]:
         enable_seo_agent=ENABLE_SEO_AGENT,
         output_format=OUTPUT_FORMAT,
         save_conversation_log=SAVE_CONVERSATION_LOG,
-        quality_threshold=QUALITY_THRESHOLD
+        quality_threshold=QUALITY_THRESHOLD,
     )
 
     return agent_config, workflow_config
@@ -105,11 +105,11 @@ async def generate_blog_post(
     verbose: bool = False,
     research_folder: str | None = None,
     conversational_mode: bool = False,
-    persona_config: str | None = None
+    persona_config: str | None = None,
 ) -> None:
     """
     Generate a blog post using the multi-agent system.
-    
+
     Args:
         topic: Main topic for the blog post
         description: Optional additional context
@@ -130,7 +130,9 @@ async def generate_blog_post(
         agent_config, workflow_config = load_config()
 
         logger.info(f"Starting blog generation for topic: {topic}")
-        logger.info(f"Target audience: {target_audience}, Length: {preferred_length} words")
+        logger.info(
+            f"Target audience: {target_audience}, Length: {preferred_length} words"
+        )
         if conversational_mode:
             logger.info("Mode: Conversational format enabled")
         if research_folder:
@@ -154,9 +156,13 @@ async def generate_blog_post(
 
             # Synthesize knowledge
             synthesizer = InformationSynthesizer()
-            research_knowledge = await synthesizer.synthesize_knowledge(knowledge_base, research_files)
+            research_knowledge = await synthesizer.synthesize_knowledge(
+                knowledge_base, research_files
+            )
 
-            logger.info(f"Processed {len(knowledge_base.insights)} insights from research")
+            logger.info(
+                f"Processed {len(knowledge_base.insights)} insights from research"
+            )
 
         # Generate blog post
         if conversational_mode:
@@ -165,7 +171,9 @@ async def generate_blog_post(
             if persona_config:
                 persona_config_path = Path(persona_config)
                 if not persona_config_path.exists():
-                    logger.error(f"Persona config file does not exist: {persona_config}")
+                    logger.error(
+                        f"Persona config file does not exist: {persona_config}"
+                    )
                     sys.exit(1)
                 persona_config_obj = load_persona_config_from_file(persona_config_path)
             else:
@@ -180,7 +188,7 @@ async def generate_blog_post(
                 description=description,
                 book_reference=book_reference,
                 target_audience=TargetAudience(target_audience),
-                preferred_length=preferred_length
+                preferred_length=preferred_length,
             )
 
             # Generate content outline (we'll need to adapt this)
@@ -199,65 +207,77 @@ async def generate_blog_post(
 
             # Create result object compatible with existing interface
             from .multi_agent_models import BlogResult
+
             result = BlogResult(
                 content=result_content.content,
                 metadata={
-                    'word_count': result_content.metadata.word_count,
-                    'reading_time_minutes': result_content.metadata.reading_time_minutes,
-                    'conversation_flow_score': result_content.conversation_flow_score,
-                    'synthesis_confidence': result_content.synthesis_confidence,
-                    'personas_used': result_content.personas_used,
-                    'research_sources_count': len(result_content.research_sources)
+                    "word_count": result_content.metadata.word_count,
+                    "reading_time_minutes": result_content.metadata.reading_time_minutes,
+                    "conversation_flow_score": result_content.conversation_flow_score,
+                    "synthesis_confidence": result_content.synthesis_confidence,
+                    "personas_used": result_content.personas_used,
+                    "research_sources_count": len(result_content.research_sources),
                 },
                 generation_log=[],  # Empty for now
                 success=True,
-                generation_time_seconds=0.0
+                generation_time_seconds=0.0,
             )
 
         else:
             # Use traditional orchestrator
             orchestrator = BlogWriterOrchestrator(agent_config, workflow_config)
             result = await orchestrator.generate_blog(
-                topic=topic,
-                description=description,
-                book_reference=book_reference
+                topic=topic, description=description, book_reference=book_reference
             )
 
         if result.success:
             logger.info("Blog generation completed successfully!")
-            logger.info(f"Generated {result.metadata.get('word_count', 'unknown')} words")
-            logger.info(f"Generation time: {result.generation_time_seconds:.2f} seconds")
+            logger.info(
+                f"Generated {result.metadata.get('word_count', 'unknown')} words"
+            )
+            logger.info(
+                f"Generation time: {result.generation_time_seconds:.2f} seconds"
+            )
 
             # Save or display the result
             if output_file:
                 output_path = Path(output_file)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
 
-                with open(output_path, 'w', encoding='utf-8') as f:
+                with open(output_path, "w", encoding="utf-8") as f:
                     f.write(result.content)
 
                 logger.info(f"Blog post saved to: {output_path}")
 
                 # Save metadata and conversation log if enabled
                 if workflow_config.save_conversation_log:
-                    metadata_path = output_path.with_suffix('.json')
-                    with open(metadata_path, 'w', encoding='utf-8') as f:
-                        json.dump({
-                            'metadata': result.metadata,
-                            'conversation_log': [msg.model_dump() for msg in result.generation_log],
-                            'success': result.success,
-                            'generation_time_seconds': result.generation_time_seconds
-                        }, f, indent=2, default=str)
+                    metadata_path = output_path.with_suffix(".json")
+                    with open(metadata_path, "w", encoding="utf-8") as f:
+                        json.dump(
+                            {
+                                "metadata": result.metadata,
+                                "conversation_log": [
+                                    msg.model_dump() for msg in result.generation_log
+                                ],
+                                "success": result.success,
+                                "generation_time_seconds": result.generation_time_seconds,
+                            },
+                            f,
+                            indent=2,
+                            default=str,
+                        )
 
-                    logger.info(f"Metadata and conversation log saved to: {metadata_path}")
+                    logger.info(
+                        f"Metadata and conversation log saved to: {metadata_path}"
+                    )
 
             else:
                 # Display to stdout
-                print("\\n" + "="*60)
+                print("\\n" + "=" * 60)
                 print("GENERATED BLOG POST")
-                print("="*60)
+                print("=" * 60)
                 print(result.content)
-                print("="*60)
+                print("=" * 60)
 
                 # Display metadata
                 print("\\nMETADATA:")
@@ -269,11 +289,11 @@ async def generate_blog_post(
 
             if result.content:  # Partial content available
                 logger.info("Partial content was generated:")
-                print("\\n" + "="*60)
+                print("\\n" + "=" * 60)
                 print("PARTIAL CONTENT")
-                print("="*60)
+                print("=" * 60)
                 print(result.content)
-                print("="*60)
+                print("=" * 60)
 
             sys.exit(1)
 
@@ -285,6 +305,7 @@ async def generate_blog_post(
         logger.error(f"Unexpected error: {e}")
         if verbose:
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 
@@ -337,71 +358,68 @@ Environment Variables:
   ENABLE_CODE_AGENT    Enable code examples (default: true)
   ENABLE_SEO_AGENT     Enable SEO optimization (default: true)
   QUALITY_THRESHOLD    Minimum quality score (default: 7.0)
-        """
+        """,
     )
 
     # Required arguments
-    parser.add_argument(
-        "topic",
-        help="Main topic for the blog post"
-    )
+    parser.add_argument("topic", help="Main topic for the blog post")
 
     # Optional arguments
     parser.add_argument(
-        "-d", "--description",
-        help="Additional context or description for the blog post"
+        "-d",
+        "--description",
+        help="Additional context or description for the blog post",
     )
 
     parser.add_argument(
-        "-b", "--book-reference",
-        help="Reference book or source material"
+        "-b", "--book-reference", help="Reference book or source material"
     )
 
     parser.add_argument(
-        "-a", "--audience",
+        "-a",
+        "--audience",
         choices=["beginner", "intermediate", "advanced", "expert"],
         default="intermediate",
-        help="Target audience level (default: intermediate)"
+        help="Target audience level (default: intermediate)",
     )
 
     parser.add_argument(
-        "-l", "--length",
+        "-l",
+        "--length",
         type=int,
         default=1500,
-        help="Preferred word count (default: 1500)"
+        help="Preferred word count (default: 1500)",
     )
 
     parser.add_argument(
-        "-o", "--output",
-        help="Output file path (default: display to stdout)"
+        "-o", "--output", help="Output file path (default: display to stdout)"
     )
 
     parser.add_argument(
-        "-v", "--verbose",
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
+    )
+
+    parser.add_argument(
+        "-r",
+        "--research-folder",
+        help="Path to folder containing research materials (MD, TXT, JSON files)",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--conversational",
         action="store_true",
-        help="Enable verbose logging"
+        help="Generate content in conversational dialogue format",
     )
 
     parser.add_argument(
-        "-r", "--research-folder",
-        help="Path to folder containing research materials (MD, TXT, JSON files)"
+        "-p",
+        "--persona-config",
+        help="Path to JSON file containing persona configuration",
     )
 
     parser.add_argument(
-        "-c", "--conversational",
-        action="store_true",
-        help="Generate content in conversational dialogue format"
-    )
-
-    parser.add_argument(
-        "-p", "--persona-config",
-        help="Path to JSON file containing persona configuration"
-    )
-
-    parser.add_argument(
-        "--config-check",
-        action="store_true",
-        help="Check configuration and exit"
+        "--config-check", action="store_true", help="Check configuration and exit"
     )
 
     args = parser.parse_args()
@@ -420,7 +438,9 @@ Environment Variables:
 
             for component, is_valid in config_status.items():
                 status_icon = "✅" if is_valid else "❌"
-                print(f"  {status_icon} {component.replace('_', ' ').title()}: {'OK' if is_valid else 'Missing/Invalid'}")
+                print(
+                    f"  {status_icon} {component.replace('_', ' ').title()}: {'OK' if is_valid else 'Missing/Invalid'}"
+                )
 
             print()
 
@@ -438,7 +458,9 @@ Environment Variables:
             if all(config_status.values()):
                 print("✅ All configuration is valid!")
             else:
-                print("⚠️  Some configuration is missing but basic functionality will work")
+                print(
+                    "⚠️  Some configuration is missing but basic functionality will work"
+                )
 
         except ConfigurationError as e:
             logger.error(f"Configuration error: {e}")
@@ -469,18 +491,20 @@ Environment Variables:
             sys.exit(1)
 
     # Run the blog generation
-    asyncio.run(generate_blog_post(
-        topic=args.topic,
-        description=args.description,
-        book_reference=args.book_reference,
-        target_audience=args.audience,
-        preferred_length=args.length,
-        output_file=args.output,
-        verbose=args.verbose,
-        research_folder=args.research_folder,
-        conversational_mode=args.conversational,
-        persona_config=args.persona_config
-    ))
+    asyncio.run(
+        generate_blog_post(
+            topic=args.topic,
+            description=args.description,
+            book_reference=args.book_reference,
+            target_audience=args.audience,
+            preferred_length=args.length,
+            output_file=args.output,
+            verbose=args.verbose,
+            research_folder=args.research_folder,
+            conversational_mode=args.conversational,
+            persona_config=args.persona_config,
+        )
+    )
 
 
 if __name__ == "__main__":

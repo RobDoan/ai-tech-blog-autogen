@@ -11,6 +11,7 @@ from typing import Any
 
 try:
     import PyPDF2
+
     HAS_PYPDF2 = True
 except ImportError:
     HAS_PYPDF2 = False
@@ -18,12 +19,14 @@ except ImportError:
 try:
     import docx
     from docx.document import Document
+
     HAS_DOCX = True
 except ImportError:
     HAS_DOCX = False
 
 try:
     import openpyxl
+
     HAS_OPENPYXL = True
 except ImportError:
     HAS_OPENPYXL = False
@@ -55,7 +58,7 @@ class PDFParser(FileParser):
                 file_type="pdf",
                 metadata={},
                 processing_errors=["PyPDF2 not available"],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
         try:
@@ -73,12 +76,14 @@ class PDFParser(FileParser):
                 file_type="pdf",
                 metadata={
                     "original_format": "pdf",
-                    "pages_count": len(text_content.split('\f')) if '\f' in text_content else 1,
+                    "pages_count": len(text_content.split("\f"))
+                    if "\f" in text_content
+                    else 1,
                     "estimated_word_count": len(text_content.split()),
-                    **metadata.__dict__
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.7 if text_content.strip() else 0.1
+                confidence_score=0.7 if text_content.strip() else 0.1,
             )
 
         except Exception as e:
@@ -89,7 +94,7 @@ class PDFParser(FileParser):
                 file_type="pdf",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
     async def _extract_pdf_text(self, file_path: Path) -> str:
@@ -97,7 +102,7 @@ class PDFParser(FileParser):
         text_content = ""
 
         try:
-            with open(file_path, 'rb') as file:
+            with open(file_path, "rb") as file:
                 pdf_reader = PyPDF2.PdfReader(file)
 
                 for page_num, page in enumerate(pdf_reader.pages):
@@ -108,11 +113,15 @@ class PDFParser(FileParser):
 
                         # Limit extraction to prevent memory issues
                         if page_num > 100:  # Max 100 pages
-                            self.logger.warning("PDF has many pages, limiting to first 100")
+                            self.logger.warning(
+                                "PDF has many pages, limiting to first 100"
+                            )
                             break
 
                     except Exception as e:
-                        self.logger.warning(f"Failed to extract text from page {page_num}: {e}")
+                        self.logger.warning(
+                            f"Failed to extract text from page {page_num}: {e}"
+                        )
                         continue
 
         except Exception as e:
@@ -127,17 +136,17 @@ class PDFParser(FileParser):
     def _clean_pdf_text(self, text: str) -> str:
         """Clean and normalize PDF extracted text."""
         # Remove excessive whitespace
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
 
         # Remove page markers
-        text = re.sub(r'\f', '\n\n', text)
+        text = re.sub(r"\f", "\n\n", text)
 
         # Fix common PDF extraction issues
-        text = re.sub(r'(\w)-\s*(\w)', r'\1\2', text)  # Join hyphenated words
-        text = re.sub(r'\n\s*\n\s*\n', '\n\n', text)  # Normalize line breaks
+        text = re.sub(r"(\w)-\s*(\w)", r"\1\2", text)  # Join hyphenated words
+        text = re.sub(r"\n\s*\n\s*\n", "\n\n", text)  # Normalize line breaks
 
         # Remove headers/footers that repeat
-        lines = text.split('\n')
+        lines = text.split("\n")
         cleaned_lines = []
 
         for line in lines:
@@ -145,17 +154,17 @@ class PDFParser(FileParser):
             if len(line) > 3 and not self._is_likely_header_footer(line):
                 cleaned_lines.append(line)
 
-        return '\n'.join(cleaned_lines)
+        return "\n".join(cleaned_lines)
 
     def _is_likely_header_footer(self, line: str) -> bool:
         """Check if a line is likely a header or footer."""
         # Common patterns for headers/footers
         patterns = [
-            r'^\d+$',  # Just a page number
-            r'^Page \d+',  # Page N
-            r'^\d+\s*of\s*\d+$',  # N of M
-            r'^Chapter \d+',  # Chapter N
-            r'^©',  # Copyright
+            r"^\d+$",  # Just a page number
+            r"^Page \d+",  # Page N
+            r"^\d+\s*of\s*\d+$",  # N of M
+            r"^Chapter \d+",  # Chapter N
+            r"^©",  # Copyright
         ]
 
         for pattern in patterns:
@@ -174,32 +183,36 @@ class PDFParser(FileParser):
 
         # Look for technical terms
         technical_terms = re.findall(
-            r'\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript|Git|CI/CD|DevOps|AWS|Azure|GCP)\b',
+            r"\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript|Git|CI/CD|DevOps|AWS|Azure|GCP)\b",
             content,
-            re.IGNORECASE
+            re.IGNORECASE,
         )
 
         if technical_terms:
             unique_terms = list(set(term.lower() for term in technical_terms))
-            insights.append(Insight(
-                content=f"Technical concepts found: {', '.join(unique_terms[:10])}",
-                source_file=source_file,
-                category="technology",
-                technical_concepts=unique_terms,
-                confidence_score=0.6,
-                importance_score=0.5
-            ))
+            insights.append(
+                Insight(
+                    content=f"Technical concepts found: {', '.join(unique_terms[:10])}",
+                    source_file=source_file,
+                    category="technology",
+                    technical_concepts=unique_terms,
+                    confidence_score=0.6,
+                    importance_score=0.5,
+                )
+            )
 
         # Look for section headers
-        headers = re.findall(r'^[A-Z][A-Z\s]{10,50}$', content, re.MULTILINE)
+        headers = re.findall(r"^[A-Z][A-Z\s]{10,50}$", content, re.MULTILINE)
         if headers:
-            insights.append(Insight(
-                content=f"Document sections: {', '.join(headers[:5])}",
-                source_file=source_file,
-                category="topic",
-                confidence_score=0.7,
-                importance_score=0.6
-            ))
+            insights.append(
+                Insight(
+                    content=f"Document sections: {', '.join(headers[:5])}",
+                    source_file=source_file,
+                    category="topic",
+                    confidence_score=0.7,
+                    importance_score=0.6,
+                )
+            )
 
         return insights
 
@@ -212,7 +225,7 @@ class DOCXParser(FileParser):
         self.supported_extensions = {".docx", ".doc"}
         self.supported_mime_types = {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/msword"
+            "application/msword",
         }
 
     def can_parse(self, file_path: Path) -> bool:
@@ -221,7 +234,7 @@ class DOCXParser(FileParser):
             self.logger.warning("python-docx not available - cannot parse DOCX files")
             return False
         # Only support .docx files, not .doc
-        if file_path.suffix.lower() == '.doc':
+        if file_path.suffix.lower() == ".doc":
             return False
         return super().can_parse(file_path)
 
@@ -234,7 +247,7 @@ class DOCXParser(FileParser):
                 file_type="docx",
                 metadata={},
                 processing_errors=["python-docx not available"],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
         try:
@@ -244,7 +257,9 @@ class DOCXParser(FileParser):
             text_content, structure_info = await self._extract_docx_content(file_path)
 
             # Extract insights
-            insights = self._extract_docx_insights(text_content, structure_info, str(file_path))
+            insights = self._extract_docx_insights(
+                text_content, structure_info, str(file_path)
+            )
 
             return ResearchFile(
                 path=file_path,
@@ -255,10 +270,10 @@ class DOCXParser(FileParser):
                     "paragraphs_count": structure_info.get("paragraphs_count", 0),
                     "tables_count": structure_info.get("tables_count", 0),
                     "headers_count": structure_info.get("headers_count", 0),
-                    **metadata.__dict__
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.8 if text_content.strip() else 0.1
+                confidence_score=0.8 if text_content.strip() else 0.1,
             )
 
         except Exception as e:
@@ -269,10 +284,12 @@ class DOCXParser(FileParser):
                 file_type="docx",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
-    async def _extract_docx_content(self, file_path: Path) -> tuple[str, dict[str, Any]]:
+    async def _extract_docx_content(
+        self, file_path: Path
+    ) -> tuple[str, dict[str, Any]]:
         """Extract text and structure information from DOCX file."""
         try:
             doc = docx.Document(str(file_path))
@@ -282,7 +299,7 @@ class DOCXParser(FileParser):
                 "paragraphs_count": 0,
                 "tables_count": 0,
                 "headers_count": 0,
-                "headers": []
+                "headers": [],
             }
 
             # Extract paragraphs
@@ -326,51 +343,57 @@ class DOCXParser(FileParser):
     def _is_likely_header(self, paragraph, text: str) -> bool:
         """Check if a paragraph is likely a header."""
         # Check if paragraph has header style
-        if hasattr(paragraph, 'style') and paragraph.style:
+        if hasattr(paragraph, "style") and paragraph.style:
             style_name = str(paragraph.style.name).lower()
-            if 'heading' in style_name or 'title' in style_name:
+            if "heading" in style_name or "title" in style_name:
                 return True
 
         # Check text characteristics
         if len(text) < 100 and text.isupper():
             return True
 
-        if len(text) < 80 and not text.endswith('.'):
+        if len(text) < 80 and not text.endswith("."):
             return True
 
         return False
 
-    def _extract_docx_insights(self, content: str, structure_info: dict, source_file: str) -> list[Insight]:
+    def _extract_docx_insights(
+        self, content: str, structure_info: dict, source_file: str
+    ) -> list[Insight]:
         """Extract insights from DOCX content and structure."""
         insights = []
 
         # Structure insights
         if structure_info["headers"]:
-            insights.append(Insight(
-                content=f"Document structure: {', '.join(structure_info['headers'][:5])}",
-                source_file=source_file,
-                category="topic",
-                confidence_score=0.8,
-                importance_score=0.7
-            ))
+            insights.append(
+                Insight(
+                    content=f"Document structure: {', '.join(structure_info['headers'][:5])}",
+                    source_file=source_file,
+                    category="topic",
+                    confidence_score=0.8,
+                    importance_score=0.7,
+                )
+            )
 
         # Technical content
         technical_terms = re.findall(
-            r'\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript)\b',
+            r"\b(?:API|SDK|JSON|XML|HTTP|HTTPS|REST|GraphQL|SQL|NoSQL|Docker|Kubernetes|React|Vue|Angular|Node\.js|Python|Java|JavaScript|TypeScript)\b",
             content,
-            re.IGNORECASE
+            re.IGNORECASE,
         )
 
         if technical_terms:
             unique_terms = list(set(term.lower() for term in technical_terms))
-            insights.append(Insight(
-                content=f"Technical topics: {', '.join(unique_terms[:8])}",
-                source_file=source_file,
-                category="technology",
-                technical_concepts=unique_terms,
-                confidence_score=0.7,
-                importance_score=0.6
-            ))
+            insights.append(
+                Insight(
+                    content=f"Technical topics: {', '.join(unique_terms[:8])}",
+                    source_file=source_file,
+                    category="technology",
+                    technical_concepts=unique_terms,
+                    confidence_score=0.7,
+                    importance_score=0.6,
+                )
+            )
 
         return insights
 
@@ -401,7 +424,7 @@ class ExcelParser(FileParser):
                 file_type="excel",
                 metadata={},
                 processing_errors=["openpyxl not available"],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
         try:
@@ -411,7 +434,9 @@ class ExcelParser(FileParser):
             text_content, structure_info = await self._extract_excel_content(file_path)
 
             # Extract insights
-            insights = self._extract_excel_insights(text_content, structure_info, str(file_path))
+            insights = self._extract_excel_insights(
+                text_content, structure_info, str(file_path)
+            )
 
             return ResearchFile(
                 path=file_path,
@@ -422,10 +447,10 @@ class ExcelParser(FileParser):
                     "sheets_count": structure_info.get("sheets_count", 0),
                     "total_rows": structure_info.get("total_rows", 0),
                     "sheet_names": structure_info.get("sheet_names", []),
-                    **metadata.__dict__
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.6 if text_content.strip() else 0.1
+                confidence_score=0.6 if text_content.strip() else 0.1,
             )
 
         except Exception as e:
@@ -436,10 +461,12 @@ class ExcelParser(FileParser):
                 file_type="excel",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
-    async def _extract_excel_content(self, file_path: Path) -> tuple[str, dict[str, Any]]:
+    async def _extract_excel_content(
+        self, file_path: Path
+    ) -> tuple[str, dict[str, Any]]:
         """Extract data and structure from Excel file."""
         try:
             workbook = openpyxl.load_workbook(str(file_path), data_only=True)
@@ -448,7 +475,7 @@ class ExcelParser(FileParser):
             structure_info = {
                 "sheets_count": len(workbook.worksheets),
                 "sheet_names": [ws.title for ws in workbook.worksheets],
-                "total_rows": 0
+                "total_rows": 0,
             }
 
             for worksheet in workbook.worksheets:
@@ -456,7 +483,9 @@ class ExcelParser(FileParser):
                 rows_processed = 0
 
                 # Extract data from non-empty cells
-                for row in worksheet.iter_rows(max_row=min(100, worksheet.max_row)):  # Limit rows
+                for row in worksheet.iter_rows(
+                    max_row=min(100, worksheet.max_row)
+                ):  # Limit rows
                     row_data = []
                     for cell in row:
                         if cell.value is not None:
@@ -482,30 +511,36 @@ class ExcelParser(FileParser):
             self.logger.error(f"Failed to extract content from Excel: {e}")
             raise
 
-    def _extract_excel_insights(self, content: str, structure_info: dict, source_file: str) -> list[Insight]:
+    def _extract_excel_insights(
+        self, content: str, structure_info: dict, source_file: str
+    ) -> list[Insight]:
         """Extract insights from Excel content."""
         insights = []
 
         # Structure insights
         if structure_info["sheet_names"]:
-            insights.append(Insight(
-                content=f"Excel sheets: {', '.join(structure_info['sheet_names'])}",
-                source_file=source_file,
-                category="general",
-                confidence_score=0.8,
-                importance_score=0.5
-            ))
+            insights.append(
+                Insight(
+                    content=f"Excel sheets: {', '.join(structure_info['sheet_names'])}",
+                    source_file=source_file,
+                    category="general",
+                    confidence_score=0.8,
+                    importance_score=0.5,
+                )
+            )
 
         # Look for numeric data patterns
-        numbers = re.findall(r'\b\d+\.?\d*\b', content)
+        numbers = re.findall(r"\b\d+\.?\d*\b", content)
         if len(numbers) > 10:
-            insights.append(Insight(
-                content=f"Contains numerical data ({len(numbers)} values)",
-                source_file=source_file,
-                category="general",
-                confidence_score=0.7,
-                importance_score=0.4
-            ))
+            insights.append(
+                Insight(
+                    content=f"Contains numerical data ({len(numbers)} values)",
+                    source_file=source_file,
+                    category="general",
+                    confidence_score=0.7,
+                    importance_score=0.4,
+                )
+            )
 
         return insights
 
@@ -524,14 +559,14 @@ class CSVParser(FileParser):
             metadata = self._get_file_metadata(file_path)
 
             # Read CSV content
-            with open(file_path, encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read(1024 * 100)  # Limit to 100KB
 
             # Extract basic structure
-            lines = content.split('\n')[:50]  # First 50 lines
+            lines = content.split("\n")[:50]  # First 50 lines
 
             # Detect delimiter
-            delimiter = ',' if ',' in lines[0] else '\t' if '\t' in lines[0] else ';'
+            delimiter = "," if "," in lines[0] else "\t" if "\t" in lines[0] else ";"
 
             # Process lines
             processed_lines = []
@@ -544,7 +579,7 @@ class CSVParser(FileParser):
                     else:
                         break
 
-            text_content = '\n'.join(processed_lines)
+            text_content = "\n".join(processed_lines)
 
             # Extract insights
             insights = self._extract_csv_insights(content, str(file_path))
@@ -558,10 +593,10 @@ class CSVParser(FileParser):
                     "delimiter": delimiter,
                     "estimated_rows": len(lines),
                     "estimated_columns": len(lines[0].split(delimiter)) if lines else 0,
-                    **metadata.__dict__
+                    **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
-                confidence_score=0.5
+                confidence_score=0.5,
             )
 
         except Exception as e:
@@ -572,23 +607,25 @@ class CSVParser(FileParser):
                 file_type="csv",
                 metadata={},
                 processing_errors=[str(e)],
-                confidence_score=0.0
+                confidence_score=0.0,
             )
 
     def _extract_csv_insights(self, content: str, source_file: str) -> list[Insight]:
         """Extract insights from CSV content."""
         insights = []
 
-        lines = content.split('\n')
+        lines = content.split("\n")
         if lines:
             header = lines[0]
-            insights.append(Insight(
-                content=f"CSV data columns: {header}",
-                source_file=source_file,
-                category="general",
-                confidence_score=0.6,
-                importance_score=0.4
-            ))
+            insights.append(
+                Insight(
+                    content=f"CSV data columns: {header}",
+                    source_file=source_file,
+                    category="general",
+                    confidence_score=0.6,
+                    importance_score=0.4,
+                )
+            )
 
         return insights
 

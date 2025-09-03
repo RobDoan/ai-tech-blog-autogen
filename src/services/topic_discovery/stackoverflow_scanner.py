@@ -18,7 +18,7 @@ class StackOverflowScanner:
             "sort": "popular",
             "site": "stackoverflow",
             "fromdate": fromdate,
-            "pagesize": 100
+            "pagesize": 100,
         }
 
         async with aiohttp.ClientSession() as session:
@@ -27,16 +27,18 @@ class StackOverflowScanner:
 
         trending_tags = []
         for tag in data.get("items", []):
-            trending_tags.append({
-                "topic": tag["name"],
-                "score": tag["count"],
-                "source": "stackoverflow",
-                "discovered_at": datetime.now(UTC),
-                "metadata": {
-                    "question_count": tag["count"],
-                    "has_synonyms": tag.get("has_synonyms", False)
+            trending_tags.append(
+                {
+                    "topic": tag["name"],
+                    "score": tag["count"],
+                    "source": "stackoverflow",
+                    "discovered_at": datetime.now(UTC),
+                    "metadata": {
+                        "question_count": tag["count"],
+                        "has_synonyms": tag.get("has_synonyms", False),
+                    },
                 }
-            })
+            )
 
         return trending_tags
 
@@ -48,7 +50,7 @@ class StackOverflowScanner:
             "sort": "hot",
             "site": "stackoverflow",
             "pagesize": 100,
-            "filter": "withbody"
+            "filter": "withbody",
         }
 
         async with aiohttp.ClientSession() as session:
@@ -57,13 +59,15 @@ class StackOverflowScanner:
 
         trending_questions = []
         for question in data.get("items", []):
-            trending_questions.append({
-                "title": question["title"],
-                "tags": question["tags"],
-                "score": question["score"],
-                "view_count": question["view_count"],
-                "source": "stackoverflow",
-                "discovered_at": datetime.now(UTC)
-            })
+            trending_questions.append(
+                {
+                    "title": question["title"],
+                    "tags": question["tags"],
+                    "score": question["score"],
+                    "view_count": question["view_count"],
+                    "source": "stackoverflow",
+                    "discovered_at": datetime.now(UTC),
+                }
+            )
 
         return trending_questions
