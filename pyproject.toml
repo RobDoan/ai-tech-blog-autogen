@@ -11,9 +11,12 @@ dependencies = [
     "autogen-ext[openai]>=0.7.1",
     "boto3>=1.40.21",
     "bs4>=0.0.2",
+    "docx>=0.2.4",
     "fastapi>=0.104.0",
     "feedparser>=6.0.11",
+    "openpyxl>=3.1.5",
     "pydantic>=2.11.7",
+    "pypdf2>=3.0.1",
     "python-dotenv>=1.1.1",
     "requests>=2.31.0",
     "uvicorn[standard]>=0.24.0",
@@ -28,6 +31,7 @@ test = [
 [dependency-groups]
 dev = [
     "debugpy>=1.8.15",
+    "ruff>=0.1.0",
 ]
 test = [
     "pytest-asyncio>=1.1.0",
@@ -45,4 +49,29 @@ include = ["src*"]
 
 [tool.setuptools.package-dir]
 "" = "."
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 

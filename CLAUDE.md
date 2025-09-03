@@ -9,6 +9,45 @@ This project uses `uv` as the package manager. Key commands:
 - `uv run python main.py` - Run the main application
 - `uv install` - Install dependencies from pyproject.toml
 - `uv sync` - Sync dependencies and update lockfile
+- `uv sync --group dev` - Install development dependencies including linting tools
+- `uv run ruff check src/` - Run linter on source code
+- `uv run ruff format src/` - Format source code
+- `uv run ruff check --fix src/` - Run linter and auto-fix issues
+
+## Git Hooks
+
+The project includes a pre-commit hook that automatically checks code quality before allowing commits:
+
+**What the hook checks:**
+- Ruff linting (code quality and style)
+- Code formatting with ruff
+- Debugging statements (pdb, breakpoint)
+- TODO/FIXME comments (warning only)
+
+**Hook behavior:**
+- Blocks commits if linting or formatting fails
+- Provides helpful error messages with fix commands
+- Only checks staged Python files for efficiency
+
+**If commit is blocked:**
+```bash
+# Fix linting issues
+uv run ruff check --fix src/
+
+# Fix formatting issues  
+uv run ruff format src/
+
+# Stage the fixed files
+git add src/
+
+# Try commit again
+git commit -m "your message"
+```
+
+**To bypass hook temporarily (not recommended):**
+```bash
+git commit --no-verify -m "your message"
+```
 
 ## Project Architecture
 

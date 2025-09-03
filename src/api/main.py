@@ -1,7 +1,8 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 import sys
 from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -12,7 +13,7 @@ from py_env import APP_NAME, APP_VERSION
 app = FastAPI(
     title=APP_NAME,
     version=APP_VERSION,
-    description="Automated blog generation using AI agents"
+    description="Automated blog generation using AI agents",
 )
 
 app.add_middleware(
@@ -23,14 +24,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Automated Blog API is running"}
+
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
