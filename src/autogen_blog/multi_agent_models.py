@@ -6,9 +6,10 @@ configuration classes, and result objects used throughout the blog generation wo
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field, field_validator
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class TargetAudience(str, Enum):
@@ -33,8 +34,8 @@ class MessageType(str, Enum):
 class BlogInput(BaseModel):
     """Input data for blog generation workflow."""
     topic: str = Field(..., description="Main topic for the blog post")
-    description: Optional[str] = Field(None, description="Additional context or description")
-    book_reference: Optional[str] = Field(None, description="Reference book or source material")
+    description: str | None = Field(None, description="Additional context or description")
+    book_reference: str | None = Field(None, description="Reference book or source material")
     target_audience: TargetAudience = Field(TargetAudience.INTERMEDIATE, description="Target audience level")
     preferred_length: int = Field(1500, description="Preferred word count for the blog post", ge=500, le=5000)
 
@@ -48,7 +49,7 @@ class BlogInput(BaseModel):
 class Section(BaseModel):
     """Individual section of a blog post outline."""
     heading: str = Field(..., description="Section heading")
-    key_points: List[str] = Field(default_factory=list, description="Key points to cover in this section")
+    key_points: list[str] = Field(default_factory=list, description="Key points to cover in this section")
     code_examples_needed: bool = Field(False, description="Whether this section needs code examples")
     estimated_words: int = Field(200, description="Estimated word count for this section", ge=50)
 
@@ -57,10 +58,10 @@ class ContentOutline(BaseModel):
     """Structured outline for blog content."""
     title: str = Field(..., description="Blog post title")
     introduction: str = Field(..., description="Introduction summary")
-    sections: List[Section] = Field(..., description="Main sections of the blog post")
+    sections: list[Section] = Field(..., description="Main sections of the blog post")
     conclusion: str = Field(..., description="Conclusion summary")
     estimated_word_count: int = Field(0, description="Total estimated word count")
-    target_keywords: List[str] = Field(default_factory=list, description="Target SEO keywords")
+    target_keywords: list[str] = Field(default_factory=list, description="Target SEO keywords")
 
     @field_validator('sections')
     def must_have_sections(cls, v):
@@ -80,24 +81,24 @@ class CodeBlock(BaseModel):
     code: str = Field(..., description="Code content")
     explanation: str = Field(..., description="Explanation of the code")
     line_numbers: bool = Field(True, description="Whether to show line numbers")
-    filename: Optional[str] = Field(None, description="Optional filename for the code")
+    filename: str | None = Field(None, description="Optional filename for the code")
 
 
 class ContentMetadata(BaseModel):
     """Metadata for blog content."""
     word_count: int = Field(0, description="Actual word count")
     reading_time_minutes: int = Field(0, description="Estimated reading time")
-    seo_score: Optional[float] = Field(None, description="SEO optimization score")
-    keywords: List[str] = Field(default_factory=list, description="Keywords found in content")
-    meta_description: Optional[str] = Field(None, description="SEO meta description")
+    seo_score: float | None = Field(None, description="SEO optimization score")
+    keywords: list[str] = Field(default_factory=list, description="Keywords found in content")
+    meta_description: str | None = Field(None, description="SEO meta description")
 
 
 class BlogContent(BaseModel):
     """Complete blog content with metadata."""
     title: str = Field(..., description="Final blog title")
     content: str = Field(..., description="Markdown formatted content")
-    sections: List[str] = Field(..., description="Section headings")
-    code_blocks: List[CodeBlock] = Field(default_factory=list, description="Code examples included")
+    sections: list[str] = Field(..., description="Section headings")
+    code_blocks: list[CodeBlock] = Field(default_factory=list, description="Code examples included")
     metadata: ContentMetadata = Field(default_factory=ContentMetadata, description="Content metadata")
 
     @field_validator('content')
@@ -113,25 +114,25 @@ class AgentMessage(BaseModel):
     message_type: MessageType = Field(..., description="Type of message")
     content: str = Field(..., description="Message content")
     timestamp: datetime = Field(default_factory=datetime.now, description="Message timestamp")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional message metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional message metadata")
 
 
 class ReviewFeedback(BaseModel):
     """Feedback from the critic agent."""
     overall_score: float = Field(..., description="Overall quality score (0-10)", ge=0, le=10)
-    strengths: List[str] = Field(..., description="Identified strengths")
-    improvements: List[str] = Field(..., description="Suggested improvements")
+    strengths: list[str] = Field(..., description="Identified strengths")
+    improvements: list[str] = Field(..., description="Suggested improvements")
     approved: bool = Field(False, description="Whether content is approved")
-    specific_feedback: Dict[str, str] = Field(default_factory=dict, description="Section-specific feedback")
+    specific_feedback: dict[str, str] = Field(default_factory=dict, description="Section-specific feedback")
 
 
 class KeywordAnalysis(BaseModel):
     """SEO keyword analysis results."""
-    primary_keywords: List[str] = Field(..., description="Primary target keywords")
-    secondary_keywords: List[str] = Field(default_factory=list, description="Secondary keywords")
-    trending_keywords: List[str] = Field(default_factory=list, description="Currently trending keywords")
-    competition_level: Dict[str, str] = Field(default_factory=dict, description="Competition analysis")
-    search_volume: Dict[str, int] = Field(default_factory=dict, description="Estimated search volumes")
+    primary_keywords: list[str] = Field(..., description="Primary target keywords")
+    secondary_keywords: list[str] = Field(default_factory=list, description="Secondary keywords")
+    trending_keywords: list[str] = Field(default_factory=list, description="Currently trending keywords")
+    competition_level: dict[str, str] = Field(default_factory=dict, description="Competition analysis")
+    search_volume: dict[str, int] = Field(default_factory=dict, description="Estimated search volumes")
 
 
 class SEOOptimizedContent(BaseModel):
@@ -139,7 +140,7 @@ class SEOOptimizedContent(BaseModel):
     optimized_title: str = Field(..., description="SEO optimized title")
     meta_description: str = Field(..., description="SEO meta description")
     optimized_content: str = Field(..., description="Content with SEO improvements")
-    keywords_used: List[str] = Field(..., description="Keywords incorporated")
+    keywords_used: list[str] = Field(..., description="Keywords incorporated")
     seo_score: float = Field(..., description="Estimated SEO score", ge=0, le=100)
 
 
@@ -161,12 +162,12 @@ class CodeExample(BaseModel):
 class BlogResult(BaseModel):
     """Final result of blog generation process."""
     content: str = Field(..., description="Final markdown content")
-    metadata: Dict[str, Any] = Field(..., description="Blog metadata")
-    generation_log: List[AgentMessage] = Field(..., description="Complete conversation log")
+    metadata: dict[str, Any] = Field(..., description="Blog metadata")
+    generation_log: list[AgentMessage] = Field(..., description="Complete conversation log")
     success: bool = Field(..., description="Whether generation was successful")
-    error_message: Optional[str] = Field(None, description="Error message if generation failed")
-    generation_time_seconds: Optional[float] = Field(None, description="Total generation time")
-    
+    error_message: str | None = Field(None, description="Error message if generation failed")
+    generation_time_seconds: float | None = Field(None, description="Total generation time")
+
     @field_validator('content')
     def content_required_if_success(cls, v, info):
         if info.data.get('success') and not v.strip():
@@ -231,11 +232,11 @@ def validate_blog_input(data: dict) -> BlogInput:
     return BlogInput(**data)
 
 
-def serialize_agent_conversation(messages: List[AgentMessage]) -> List[Dict[str, Any]]:
+def serialize_agent_conversation(messages: list[AgentMessage]) -> list[dict[str, Any]]:
     """Serialize agent conversation for storage."""
     return [msg.dict() for msg in messages]
 
 
-def deserialize_agent_conversation(data: List[Dict[str, Any]]) -> List[AgentMessage]:
+def deserialize_agent_conversation(data: list[dict[str, Any]]) -> list[AgentMessage]:
     """Deserialize agent conversation from storage."""
     return [AgentMessage(**msg_data) for msg_data in data]

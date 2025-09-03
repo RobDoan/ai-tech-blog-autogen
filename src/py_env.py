@@ -5,7 +5,7 @@ This module provides a single source of truth for all configuration values.
 
 import os
 from pathlib import Path
-from typing import Optional
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -111,7 +111,7 @@ database_url = DATABASE_URL
 redis_url = REDIS_URL
 
 
-def get_required_env_var(var_name: str, error_msg: Optional[str] = None) -> str:
+def get_required_env_var(var_name: str, error_msg: str | None = None) -> str:
     """
     Get a required environment variable, raising an error if not found.
     
@@ -146,5 +146,5 @@ def validate_config() -> dict[str, bool]:
         'github_configured': bool(GITHUB_API_TOKEN),
         'data_paths_exist': DATA_PATH.exists() or DATA_PATH.parent.exists(),
     }
-    
+
     return status

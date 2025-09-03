@@ -4,20 +4,31 @@ Configuration management for the Weekly Trend Worker system.
 Centralizes all configuration constants and environment variable handling.
 """
 
-import os
-from typing import Dict, List
 from dataclasses import dataclass
+
 from src.py_env import (
-    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, S3_BUCKET_NAME, S3_KEY_PREFIX, S3_FILE_NAMING_PATTERN,
-    SERPAPI_API_KEY, NEWSAPI_API_KEY, APIFY_API_TOKEN,
-    MAX_TRENDS_PER_RUN, SCORE_THRESHOLD, CONCURRENT_EXECUTION_CHECK, RETRY_ATTEMPTS, RETRY_DELAY,
-    LOCAL_BACKUP_DIR, STATUS_FILE_PATH, LOCK_FILE_PATH,
-    LOG_LEVEL, STRUCTURED_LOGGING, LOG_FILE_PATH, LOG_MAX_BYTES, LOG_BACKUP_COUNT,
-    # AI Configuration imports
-    OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TEMPERATURE, OPENAI_MAX_TOKENS,
-    # Legacy imports for backward compatibility
-    aws_access_key_id, aws_secret_access_key, aws_region, s3_bucket_name,
-    serpapi_api_key, newsapi_api_key, apify_api_token
+    APIFY_API_TOKEN,
+    AWS_ACCESS_KEY_ID,
+    AWS_REGION,
+    AWS_SECRET_ACCESS_KEY,
+    CONCURRENT_EXECUTION_CHECK,
+    LOCAL_BACKUP_DIR,
+    LOCK_FILE_PATH,
+    LOG_BACKUP_COUNT,
+    LOG_FILE_PATH,
+    LOG_LEVEL,
+    LOG_MAX_BYTES,
+    MAX_TRENDS_PER_RUN,
+    NEWSAPI_API_KEY,
+    RETRY_ATTEMPTS,
+    RETRY_DELAY,
+    S3_BUCKET_NAME,
+    S3_FILE_NAMING_PATTERN,
+    S3_KEY_PREFIX,
+    SCORE_THRESHOLD,
+    SERPAPI_API_KEY,
+    STATUS_FILE_PATH,
+    STRUCTURED_LOGGING,
 )
 
 
@@ -39,7 +50,7 @@ RSS_SOURCES = [
         timeout=30
     ),
     RSSSourceConfig(
-        name="GDB Blog", 
+        name="GDB Blog",
         rss_url="https://feeds.feedburner.com/GDBcode",
         weight=0.8,
         timeout=30
@@ -58,7 +69,7 @@ RSS_SOURCES = [
     ),
     RSSSourceConfig(
         name="Stripe Engineering",
-        rss_url="https://stripe.com/blog/engineering/feed.xml", 
+        rss_url="https://stripe.com/blog/engineering/feed.xml",
         weight=0.8,
         timeout=30
     ),
@@ -103,79 +114,79 @@ S3_CONFIG = {
 # Enhanced tech keywords for trend detection
 TECH_KEYWORDS = [
     # AI/ML Keywords
-    'AI', 'Artificial Intelligence', 'Machine Learning', 'ML', 'Deep Learning', 
+    'AI', 'Artificial Intelligence', 'Machine Learning', 'ML', 'Deep Learning',
     'Neural Networks', 'GPT', 'OpenAI', 'ChatGPT', 'Claude', 'Gemini',
     'LLM', 'Large Language Models', 'Computer Vision', 'NLP', 'Natural Language Processing',
     'Transformer', 'BERT', 'Vision Transformers', 'Stable Diffusion', 'Midjourney',
-    
+
     # Programming Languages
-    'Python', 'JavaScript', 'TypeScript', 'Java', 'Go', 'Golang', 'Rust', 
+    'Python', 'JavaScript', 'TypeScript', 'Java', 'Go', 'Golang', 'Rust',
     'C++', 'C#', 'Swift', 'Kotlin', 'PHP', 'Ruby', 'Scala', 'Clojure',
     'WebAssembly', 'WASM', 'Dart', 'Elixir', 'Haskell',
-    
+
     # Web Frameworks & Libraries
     'React', 'Vue', 'Vue.js', 'Angular', 'Svelte', 'Next.js', 'Nuxt.js',
-    'Node.js', 'Express', 'Fastify', 'Django', 'Flask', 'FastAPI', 
+    'Node.js', 'Express', 'Fastify', 'Django', 'Flask', 'FastAPI',
     'Spring', 'Spring Boot', 'Ruby on Rails', 'Laravel', 'Symfony',
-    
+
     # AI/ML Frameworks
     'TensorFlow', 'PyTorch', 'Keras', 'Scikit-learn', 'Pandas', 'NumPy',
     'Hugging Face', 'LangChain', 'OpenCV', 'JAX', 'MLflow', 'Weights & Biases',
-    
+
     # Cloud & Infrastructure
     'AWS', 'Amazon Web Services', 'Azure', 'Microsoft Azure', 'GCP', 'Google Cloud',
     'Vercel', 'Netlify', 'Cloudflare', 'DigitalOcean', 'Heroku', 'Railway',
     'Docker', 'Kubernetes', 'K8s', 'Helm', 'Istio', 'Terraform', 'Pulumi',
-    
+
     # DevOps & CI/CD
     'DevOps', 'CI/CD', 'GitHub Actions', 'GitLab CI', 'Jenkins', 'CircleCI',
     'Docker', 'Containerization', 'Microservices', 'Serverless', 'Lambda',
     'API Gateway', 'Load Balancer', 'CDN', 'Edge Computing',
-    
+
     # Blockchain & Web3
-    'Blockchain', 'Web3', 'NFT', 'Non-Fungible Token', 'Cryptocurrency', 
+    'Blockchain', 'Web3', 'NFT', 'Non-Fungible Token', 'Cryptocurrency',
     'Bitcoin', 'Ethereum', 'Solana', 'Polygon', 'DeFi', 'Decentralized Finance',
-    'Smart Contracts', 'DAO', 'Decentralized Autonomous Organization', 
+    'Smart Contracts', 'DAO', 'Decentralized Autonomous Organization',
     'Metaverse', 'Layer 2', 'zkSync', 'Optimism', 'Arbitrum',
-    
+
     # Mobile Development
     'Mobile', 'iOS', 'Android', 'Swift', 'Kotlin', 'Flutter', 'React Native',
     'Xamarin', 'Ionic', 'Progressive Web App', 'PWA', 'Mobile First',
-    
+
     # Data & Analytics
     'Data Science', 'Big Data', 'Analytics', 'Business Intelligence', 'BI',
     'ETL', 'ELT', 'Data Pipeline', 'Data Engineering', 'Data Warehouse',
     'Apache Spark', 'Hadoop', 'Kafka', 'Apache Airflow', 'dbt', 'Snowflake',
     'Databricks', 'Data Lake', 'Data Mesh', 'Real-time Analytics',
-    
+
     # Databases
     'Database', 'SQL', 'NoSQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'Redis',
     'Elasticsearch', 'Cassandra', 'DynamoDB', 'CouchDB', 'Neo4j',
     'Vector Database', 'Pinecone', 'Weaviate', 'Chroma', 'SQLite',
-    
+
     # APIs & Architecture
     'API', 'REST', 'RESTful', 'GraphQL', 'gRPC', 'WebSocket', 'Server-Sent Events',
     'Event Driven Architecture', 'Message Queue', 'Pub/Sub', 'MQTT',
     'API Gateway', 'OpenAPI', 'Swagger', 'JSON-RPC', 'tRPC',
-    
+
     # Security & Privacy
     'Cybersecurity', 'Security', 'Privacy', 'GDPR', 'CCPA', 'Authentication',
     'Authorization', 'OAuth', 'JWT', 'Zero Trust', 'VPN', 'End-to-End Encryption',
     'Penetration Testing', 'Vulnerability', 'Bug Bounty', 'OWASP',
     'Multi-Factor Authentication', 'MFA', 'Biometric Authentication',
-    
+
     # Development Tools & Practices
     'GitHub', 'Git', 'GitLab', 'Version Control', 'Code Review', 'Pull Request',
     'Agile', 'Scrum', 'Kanban', 'Test Driven Development', 'TDD', 'BDD',
     'Unit Testing', 'Integration Testing', 'End-to-End Testing', 'Playwright',
     'Cypress', 'Jest', 'Pytest', 'Selenium', 'Code Quality', 'ESLint', 'Prettier',
-    
+
     # Emerging Technologies
     'Quantum Computing', 'Quantum', 'Edge AI', '5G', '6G', 'IoT', 'Internet of Things',
     'Augmented Reality', 'AR', 'Virtual Reality', 'VR', 'Mixed Reality', 'MR',
     'Digital Twin', 'Autonomous Vehicles', 'Self-Driving Cars', 'Robotics',
     'Brain-Computer Interface', 'BCI', 'Neuralink', 'Wearable Technology',
-    
+
     # Industry Trends
     'Remote Work', 'Work From Home', 'Hybrid Work', 'Digital Transformation',
     'Low-Code', 'No-Code', 'Citizen Developer', 'SaaS', 'PaaS', 'IaaS',
@@ -197,7 +208,7 @@ API_CONFIG = {
         'max_retries': 3,
         'sources': [
             'techcrunch.com',
-            'venturebeat.com', 
+            'venturebeat.com',
             'wired.com',
             'arstechnica.com',
             'theverge.com',
@@ -239,17 +250,17 @@ LOGGING_CONFIG = {
 }
 
 
-def get_worker_config() -> Dict:
+def get_worker_config() -> dict:
     """Get worker configuration with environment variable overrides"""
     return WORKER_CONFIG.copy()
 
 
-def get_s3_config() -> Dict:
+def get_s3_config() -> dict:
     """Get S3 configuration with environment variable overrides"""
     return S3_CONFIG.copy()
 
 
-def get_rss_sources() -> List[Dict]:
+def get_rss_sources() -> list[dict]:
     """Get RSS sources as dictionaries for backward compatibility"""
     return [
         {
@@ -262,7 +273,7 @@ def get_rss_sources() -> List[Dict]:
     ]
 
 
-def validate_configuration() -> List[str]:
+def validate_configuration() -> list[str]:
     """
     Validate configuration and return list of issues
     
@@ -270,30 +281,30 @@ def validate_configuration() -> List[str]:
         List of configuration issues (empty if all good)
     """
     issues = []
-    
+
     # Check required environment variables for S3
     if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
         issues.append("AWS credentials not configured (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)")
-    
+
     # Check S3 bucket name
     if not S3_BUCKET_NAME:
         issues.append("S3 bucket name not configured (S3_BUCKET_NAME)")
-    
+
     # Check API keys (warn but don't fail)
     if not SERPAPI_API_KEY:
         issues.append("Warning: SERPAPI_API_KEY not configured (will use mock data)")
-    
+
     if not NEWSAPI_API_KEY:
         issues.append("Warning: NEWSAPI_API_KEY not configured (will use mock data)")
-    
+
     if not APIFY_API_TOKEN:
         issues.append("Warning: APIFY_API_TOKEN not configured (will use mock data)")
-    
+
     # Validate numeric configurations
     if MAX_TRENDS_PER_RUN <= 0:
         issues.append("MAX_TRENDS_PER_RUN must be positive")
-    
+
     if SCORE_THRESHOLD < 0 or SCORE_THRESHOLD > 1:
         issues.append("SCORE_THRESHOLD must be between 0 and 1")
-    
+
     return issues

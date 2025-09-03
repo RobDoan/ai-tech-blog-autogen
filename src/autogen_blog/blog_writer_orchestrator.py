@@ -7,25 +7,26 @@ into a comprehensive, SEO-optimized blog post through a structured workflow.
 
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Any
 
 from .base_agent import AgentState
-from .content_planner_agent import ContentPlannerAgent
-from .writer_agent import WriterAgent
-from .critic_agent import CriticAgent
-from .seo_agent import SEOAgent
 from .code_agent import CodeAgent
+from .content_planner_agent import ContentPlannerAgent
+from .critic_agent import CriticAgent
 from .multi_agent_models import (
     AgentConfig,
-    WorkflowConfig,
+    AgentMessage,
+    BlogContent,
+    BlogGenerationError,
     BlogInput,
     BlogResult,
-    BlogContent,
     ContentOutline,
-    AgentMessage,
     MessageType,
-    BlogGenerationError
+    WorkflowConfig,
 )
+from .seo_agent import SEOAgent
+from .writer_agent import WriterAgent
+
 
 class BlogWriterOrchestrator:
     """
@@ -82,8 +83,8 @@ class BlogWriterOrchestrator:
     async def generate_blog(
         self,
         topic: str,
-        description: Optional[str] = None,
-        book_reference: Optional[str] = None
+        description: str | None = None,
+        book_reference: str | None = None
     ) -> BlogResult:
         """
         Generate a complete blog post through the multi-agent workflow.
@@ -432,7 +433,7 @@ class BlogWriterOrchestrator:
     def _integrate_code_into_content(
         self,
         content: BlogContent,
-        code_examples: List[Any]
+        code_examples: list[Any]
     ) -> BlogContent:
         """Integrate generated code examples into the content."""
         # This is a simplified integration approach

@@ -5,36 +5,38 @@ This agent extends WriterAgent to generate conversational blog content using
 personas, research knowledge, and dialogue generation capabilities.
 """
 
-import asyncio
-from typing import Optional, List, Dict, Any, Tuple
 import logging
+from typing import Any
+
 from pydantic import Field
 
-from .writer_agent import WriterAgent
-from .persona_system import (
-    PersonaConfig, PersonaManager, ProblemPresenter, SolutionProvider,
-    create_default_persona_config
-)
 from .dialogue_generator import DialogueGenerator, DialogueSection
 from .information_synthesizer import SynthesizedKnowledge
-from .research_processor import ResearchProcessor, KnowledgeBase
 from .multi_agent_models import (
     AgentConfig,
-    BlogInput,
-    ContentOutline,
     BlogContent,
+    BlogInput,
     ContentMetadata,
+    ContentOutline,
+    ContentQualityError,
     MessageType,
-    AgentMessage,
-    ContentQualityError
 )
+from .persona_system import (
+    PersonaConfig,
+    PersonaManager,
+    ProblemPresenter,
+    SolutionProvider,
+    create_default_persona_config,
+)
+from .research_processor import KnowledgeBase
+from .writer_agent import WriterAgent
 
 
 class ConversationalBlogContent(BlogContent):
     """Extended blog content with conversational metadata."""
-    dialogue_sections: List[DialogueSection] = Field(default_factory=list, description="Generated dialogue sections")
-    personas_used: Optional[Tuple[str, str]] = Field(None, description="Names of personas used in the conversation")
-    research_sources: List[str] = Field(default_factory=list, description="List of research sources referenced")
+    dialogue_sections: list[DialogueSection] = Field(default_factory=list, description="Generated dialogue sections")
+    personas_used: tuple[str, str] | None = Field(None, description="Names of personas used in the conversation")
+    research_sources: list[str] = Field(default_factory=list, description="List of research sources referenced")
     conversation_flow_score: float = Field(0.0, description="Quality score for conversation flow", ge=0.0, le=10.0)
     synthesis_confidence: float = Field(0.0, description="Confidence in knowledge synthesis", ge=0.0, le=1.0)
 
@@ -61,9 +63,9 @@ class ConversationalWriterAgent(WriterAgent):
         self.dialogue_generator = DialogueGenerator(config)
 
         # Cache for active personas and knowledge
-        self._active_personas: Optional[Tuple[ProblemPresenter, SolutionProvider]] = None
-        self._current_knowledge: Optional[SynthesizedKnowledge] = None
-        self._persona_config: Optional[PersonaConfig] = None
+        self._active_personas: tuple[ProblemPresenter, SolutionProvider] | None = None
+        self._current_knowledge: SynthesizedKnowledge | None = None
+        self._persona_config: PersonaConfig | None = None
 
     def _get_system_message(self) -> str:
         """Get the system message for conversational writing."""
@@ -104,9 +106,9 @@ Focus on creating conversations that feel authentic while delivering valuable te
         self,
         outline: ContentOutline,
         blog_input: BlogInput,
-        research_knowledge: Optional[SynthesizedKnowledge] = None,
-        personas: Optional[Tuple[ProblemPresenter, SolutionProvider]] = None,
-        persona_config: Optional[PersonaConfig] = None
+        research_knowledge: SynthesizedKnowledge | None = None,
+        personas: tuple[ProblemPresenter, SolutionProvider] | None = None,
+        persona_config: PersonaConfig | None = None
     ) -> ConversationalBlogContent:
         """
         Generate conversational blog content using personas and research.
@@ -293,7 +295,7 @@ Write a natural conclusion that provides closure to the conversational format.
     def _calculate_conversational_metadata(
         self,
         content: str,
-        dialogue_sections: List[DialogueSection]
+        dialogue_sections: list[DialogueSection]
     ) -> ContentMetadata:
         """Calculate metadata specific to conversational content."""
         # Base metadata from parent class
@@ -316,7 +318,7 @@ Write a natural conclusion that provides closure to the conversational format.
             meta_description=base_metadata.meta_description
         )
 
-    def _calculate_flow_score(self, dialogue_sections: List[DialogueSection]) -> float:
+    def _calculate_flow_score(self, dialogue_sections: list[DialogueSection]) -> float:
         """Calculate a score for conversation flow quality."""
         if not dialogue_sections:
             return 0.0
@@ -513,7 +515,7 @@ Please provide the complete revised conversational blog post in markdown format,
     async def analyze_conversational_structure(
         self,
         content: ConversationalBlogContent
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Analyze the structure and quality of conversational content.
 

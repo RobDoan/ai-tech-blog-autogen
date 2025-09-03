@@ -11,18 +11,18 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional, Dict, Any, List, Union
+from typing import Any
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.messages import TextMessage
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 from .multi_agent_models import (
+    AgentCommunicationError,
     AgentConfig,
     AgentMessage,
+    BlogGenerationError,
     MessageType,
-    AgentCommunicationError,
-    BlogGenerationError
 )
 
 
@@ -86,7 +86,7 @@ class BaseAgent(ABC):
         self,
         prompt: str,
         message_type: MessageType = MessageType.CONTENT,
-        max_retries: Optional[int] = None
+        max_retries: int | None = None
     ) -> AgentMessage:
         """
         Query the agent with retry logic and structured response handling.
@@ -133,7 +133,7 @@ class BaseAgent(ABC):
                 else:
                     raise AgentCommunicationError("Agent returned empty response")
 
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 self.logger.warning(f"Attempt {attempt + 1} timed out: {e}")
                 if attempt == max_retries:
                     raise AgentCommunicationError(f"Agent query timed out after {max_retries + 1} attempts")
@@ -152,7 +152,7 @@ class BaseAgent(ABC):
         # This should never be reached due to the exception handling above
         raise AgentCommunicationError("Unexpected error in query_agent")
 
-    def parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def parse_json_response(self, response: str) -> dict[str, Any] | None:
         """
         Parse JSON response from agent, handling common formatting issues.
 
@@ -201,7 +201,7 @@ class BaseAgent(ABC):
             self.logger.warning(f"Failed to parse JSON response: {response[:200]}...")
             return None
 
-    def extract_structured_data(self, response: str, expected_keys: List[str]) -> Dict[str, Any]:
+    def extract_structured_data(self, response: str, expected_keys: list[str]) -> dict[str, Any]:
         """
         Extract structured data from agent response, with fallback parsing.
 
@@ -240,7 +240,7 @@ class BaseAgent(ABC):
 
         return result
 
-    async def validate_response(self, response: AgentMessage, validation_criteria: Dict[str, Any]) -> bool:
+    async def validate_response(self, response: AgentMessage, validation_criteria: dict[str, Any]) -> bool:
         """
         Validate agent response against criteria.
 
@@ -327,7 +327,7 @@ class MessageParser:
             raise BlogGenerationError(f"Missing template variable: {e}")
 
     @staticmethod
-    def extract_sections(content: str, section_markers: List[str]) -> Dict[str, str]:
+    def extract_sections(content: str, section_markers: list[str]) -> dict[str, str]:
         """
         Extract sections from content based on markers.
 
@@ -396,10 +396,10 @@ class AgentState:
     """Manages state and coordination between agents in the workflow."""
 
     def __init__(self):
-        self.conversation_history: List[AgentMessage] = []
+        self.conversation_history: list[AgentMessage] = []
         self.current_step = 0
-        self.workflow_data: Dict[str, Any] = {}
-        self.errors: List[AgentMessage] = []
+        self.workflow_data: dict[str, Any] = {}
+        self.errors: list[AgentMessage] = []
 
     def add_message(self, message: AgentMessage):
         """Add a message to the conversation history."""
@@ -409,15 +409,15 @@ class AgentState:
         if message.message_type == MessageType.ERROR:
             self.errors.append(message)
 
-    def get_messages_by_agent(self, agent_name: str) -> List[AgentMessage]:
+    def get_messages_by_agent(self, agent_name: str) -> list[AgentMessage]:
         """Get all messages from a specific agent."""
         return [msg for msg in self.conversation_history if msg.agent_name == agent_name]
 
-    def get_messages_by_type(self, message_type: MessageType) -> List[AgentMessage]:
+    def get_messages_by_type(self, message_type: MessageType) -> list[AgentMessage]:
         """Get all messages of a specific type."""
         return [msg for msg in self.conversation_history if msg.message_type == message_type]
 
-    def get_latest_message_by_type(self, message_type: MessageType) -> Optional[AgentMessage]:
+    def get_latest_message_by_type(self, message_type: MessageType) -> AgentMessage | None:
         """Get the most recent message of a specific type."""
         messages = self.get_messages_by_type(message_type)
         return messages[-1] if messages else None

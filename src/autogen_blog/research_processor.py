@@ -6,16 +6,17 @@ for ingesting and synthesizing knowledge from various file formats.
 """
 
 import asyncio
+import json
+import logging
+import mimetypes
+import re
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set, Union
-import logging
-import json
-import re
-import mimetypes
-from dataclasses import dataclass
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
+
 from .multi_agent_models import BlogGenerationError
 
 
@@ -46,9 +47,9 @@ class ResearchFile(BaseModel):
     path: Path = Field(..., description="File path")
     content: str = Field(..., description="Extracted text content")
     file_type: str = Field(..., description="File type (md, txt, json, etc.)")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="File metadata")
-    extracted_insights: List[str] = Field(default_factory=list, description="Key insights extracted")
-    processing_errors: List[str] = Field(default_factory=list, description="Errors during processing")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="File metadata")
+    extracted_insights: list[str] = Field(default_factory=list, description="Key insights extracted")
+    processing_errors: list[str] = Field(default_factory=list, description="Errors during processing")
     confidence_score: float = Field(1.0, description="Confidence in extraction quality", ge=0.0, le=1.0)
 
     class Config:
@@ -67,17 +68,17 @@ class Insight(BaseModel):
     source_file: str = Field(..., description="Source file path")
     confidence_score: float = Field(0.8, description="Confidence in this insight", ge=0.0, le=1.0)
     category: str = Field("general", description="Category: problem, solution, technology, best_practice")
-    technical_concepts: List[str] = Field(default_factory=list, description="Technical concepts mentioned")
-    code_references: List[str] = Field(default_factory=list, description="Code snippets or references")
+    technical_concepts: list[str] = Field(default_factory=list, description="Technical concepts mentioned")
+    code_references: list[str] = Field(default_factory=list, description="Code snippets or references")
     importance_score: float = Field(0.5, description="Relative importance", ge=0.0, le=1.0)
 
 
 class KnowledgeBase(BaseModel):
     """Consolidated knowledge base from processed research."""
-    insights: List[Insight] = Field(default_factory=list, description="Extracted insights")
-    technical_concepts: Set[str] = Field(default_factory=set, description="All technical concepts found")
-    code_examples: List[Dict[str, str]] = Field(default_factory=list, description="Code examples found")
-    references: List[str] = Field(default_factory=list, description="Source files referenced")
+    insights: list[Insight] = Field(default_factory=list, description="Extracted insights")
+    technical_concepts: set[str] = Field(default_factory=set, description="All technical concepts found")
+    code_examples: list[dict[str, str]] = Field(default_factory=list, description="Code examples found")
+    references: list[str] = Field(default_factory=list, description="Source files referenced")
     summary: str = Field("", description="Summary of the knowledge base")
     processing_timestamp: datetime = Field(default_factory=datetime.now)
 
@@ -90,8 +91,8 @@ class FileParser:
 
     def __init__(self):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.supported_extensions: Set[str] = set()
-        self.supported_mime_types: Set[str] = set()
+        self.supported_extensions: set[str] = set()
+        self.supported_mime_types: set[str] = set()
 
     def can_parse(self, file_path: Path) -> bool:
         """Check if this parser can handle the file."""
@@ -136,7 +137,7 @@ class MarkdownParser(FileParser):
             metadata = self._get_file_metadata(file_path)
 
             # Read file content
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding='utf-8', errors='ignore') as f:
                 raw_content = f.read()
 
             # Extract text content (removing markdown syntax for analysis)
@@ -201,7 +202,7 @@ class MarkdownParser(FileParser):
 
         return content
 
-    def _extract_markdown_insights(self, content: str, source_file: str) -> List[Insight]:
+    def _extract_markdown_insights(self, content: str, source_file: str) -> list[Insight]:
         """Extract insights from markdown structure."""
         insights = []
 
@@ -248,7 +249,7 @@ class TextParser(FileParser):
         try:
             metadata = self._get_file_metadata(file_path)
 
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding='utf-8', errors='ignore') as f:
                 content = f.read()
 
             # Extract basic insights from text
@@ -278,7 +279,7 @@ class TextParser(FileParser):
                 confidence_score=0.0
             )
 
-    def _extract_text_insights(self, content: str, source_file: str) -> List[Insight]:
+    def _extract_text_insights(self, content: str, source_file: str) -> list[Insight]:
         """Extract insights from plain text content."""
         insights = []
 
@@ -316,7 +317,7 @@ class JSONParser(FileParser):
         try:
             metadata = self._get_file_metadata(file_path)
 
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 if file_path.suffix.lower() == '.jsonl':
                     # Handle JSON Lines format
                     data = [json.loads(line) for line in f if line.strip()]
@@ -351,7 +352,7 @@ class JSONParser(FileParser):
                 confidence_score=0.0
             )
 
-    def _json_to_text(self, data: Union[Dict, List, Any]) -> str:
+    def _json_to_text(self, data: dict | list | Any) -> str:
         """Convert JSON data to readable text."""
         if isinstance(data, dict):
             text_parts = []
@@ -376,7 +377,7 @@ class JSONParser(FileParser):
         else:
             return str(data)
 
-    def _extract_json_insights(self, data: Union[Dict, List, Any], source_file: str) -> List[Insight]:
+    def _extract_json_insights(self, data: dict | list | Any, source_file: str) -> list[Insight]:
         """Extract insights from JSON structure and content."""
         insights = []
 
@@ -409,7 +410,7 @@ class ResearchProcessor:
 
     def __init__(self):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.parsers: List[FileParser] = [
+        self.parsers: list[FileParser] = [
             MarkdownParser(),
             TextParser(),
             JSONParser()
@@ -417,7 +418,10 @@ class ResearchProcessor:
 
         # Add advanced parsers if available
         try:
-            from .advanced_file_parsers import get_advanced_parsers, get_missing_dependencies
+            from .advanced_file_parsers import (
+                get_advanced_parsers,
+                get_missing_dependencies,
+            )
             advanced_parsers = get_advanced_parsers()
             self.parsers.extend(advanced_parsers)
 
@@ -474,7 +478,7 @@ class ResearchProcessor:
         self.logger.info(f"Generated knowledge base with {len(knowledge_base.insights)} insights")
         return knowledge_base
 
-    def _find_supported_files(self, folder_path: Path, recursive: bool) -> List[Path]:
+    def _find_supported_files(self, folder_path: Path, recursive: bool) -> list[Path]:
         """Find all supported files in the folder."""
         files = []
 
@@ -495,14 +499,14 @@ class ResearchProcessor:
         """Check if a file is supported by any parser."""
         return any(parser.can_parse(file_path) for parser in self.parsers)
 
-    def _get_parser_for_file(self, file_path: Path) -> Optional[FileParser]:
+    def _get_parser_for_file(self, file_path: Path) -> FileParser | None:
         """Get the appropriate parser for a file."""
         for parser in self.parsers:
             if parser.can_parse(file_path):
                 return parser
         return None
 
-    async def _process_files_concurrently(self, files: List[Path]) -> List[ResearchFile]:
+    async def _process_files_concurrently(self, files: list[Path]) -> list[ResearchFile]:
         """Process multiple files concurrently."""
         tasks = []
 
@@ -532,7 +536,7 @@ class ResearchProcessor:
 
         return processed_files
 
-    async def _synthesize_knowledge(self, processed_files: List[ResearchFile]) -> KnowledgeBase:
+    async def _synthesize_knowledge(self, processed_files: list[ResearchFile]) -> KnowledgeBase:
         """Synthesize knowledge from processed files."""
         all_insights = []
         all_technical_concepts = set()
@@ -578,7 +582,7 @@ class ResearchProcessor:
             summary=summary
         )
 
-    def _generate_knowledge_summary(self, processed_files: List[ResearchFile], insights: List[Insight]) -> str:
+    def _generate_knowledge_summary(self, processed_files: list[ResearchFile], insights: list[Insight]) -> str:
         """Generate a summary of the processed knowledge."""
         file_types = {}
         total_insights = len(insights)
@@ -591,6 +595,6 @@ class ResearchProcessor:
 
         return f"Processed {len(processed_files)} files ({file_summary}) and extracted {total_insights} insights."
 
-    def get_supported_formats(self) -> List[str]:
+    def get_supported_formats(self) -> list[str]:
         """Get list of supported file formats."""
         return sorted(list(self.supported_extensions))

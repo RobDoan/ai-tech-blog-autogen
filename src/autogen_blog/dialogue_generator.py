@@ -5,21 +5,21 @@ This module provides dialogue generation capabilities, conversation flow managem
 and technical contextualization for creating natural developer-focused conversations.
 """
 
-import asyncio
+import logging
 import random
-from typing import List, Dict, Any, Optional, Tuple, Set
+import re
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
-import re
+from typing import Any
 
+from .information_synthesizer import CodeExample, SynthesizedKnowledge, TechnicalDetail
+from .multi_agent_models import BlogGenerationError, BlogInput, ContentOutline
 from .persona_system import (
-    PersonaProfile, PersonaConfig, ProblemPresenter, SolutionProvider,
-    DialogueExchange, DialogueSection, PersonaManager
+    DialogueExchange,
+    DialogueSection,
+    ProblemPresenter,
+    SolutionProvider,
 )
-from .information_synthesizer import SynthesizedKnowledge, TechnicalDetail, CodeExample
-from .multi_agent_models import ContentOutline, BlogInput, BlogGenerationError
-from .base_agent import BaseAgent
 
 
 class DialogueGenerationError(BlogGenerationError):
@@ -46,12 +46,12 @@ class ConversationType(str, Enum):
 class ConversationContext:
     """Context information for dialogue generation."""
     main_topic: str
-    technical_concepts: List[str] = field(default_factory=list)
+    technical_concepts: list[str] = field(default_factory=list)
     target_audience_level: str = "intermediate"
-    conversation_goals: List[str] = field(default_factory=list)
-    available_examples: List[CodeExample] = field(default_factory=list)
-    key_insights: List[str] = field(default_factory=list)
-    problem_solution_pairs: List[Dict[str, Any]] = field(default_factory=list)
+    conversation_goals: list[str] = field(default_factory=list)
+    available_examples: list[CodeExample] = field(default_factory=list)
+    key_insights: list[str] = field(default_factory=list)
+    problem_solution_pairs: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -62,7 +62,7 @@ class DialogueFlow:
     example_exchanges: int = 4
     conclusion_exchanges: int = 2
     max_consecutive_speaker: int = 2
-    transition_phrases: List[str] = field(default_factory=list)
+    transition_phrases: list[str] = field(default_factory=list)
 
 
 class ConversationFlowManager:
@@ -124,7 +124,7 @@ class ConversationFlowManager:
             transition_phrases=self._select_transition_phrases(context)
         )
 
-    def _select_transition_phrases(self, context: ConversationContext) -> List[str]:
+    def _select_transition_phrases(self, context: ConversationContext) -> list[str]:
         """Select appropriate transition phrases for the context."""
         phrases = []
 
@@ -137,7 +137,7 @@ class ConversationFlowManager:
 
         return phrases
 
-    def validate_flow(self, exchanges: List[DialogueExchange]) -> Tuple[bool, List[str]]:
+    def validate_flow(self, exchanges: list[DialogueExchange]) -> tuple[bool, list[str]]:
         """Validate that dialogue follows good conversation flow."""
         issues = []
 
@@ -177,9 +177,9 @@ class TechnicalContextualizer:
     def contextualize_technical_discussion(
         self,
         topic: str,
-        technical_details: List[TechnicalDetail],
+        technical_details: list[TechnicalDetail],
         target_level: str = "intermediate"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create technical context for conversation."""
         relevant_details = [
             detail for detail in technical_details
@@ -207,7 +207,7 @@ class TechnicalContextualizer:
 
         return context
 
-    def generate_technical_examples(self, concept: str, code_examples: List[CodeExample]) -> List[str]:
+    def generate_technical_examples(self, concept: str, code_examples: list[CodeExample]) -> list[str]:
         """Generate technical examples for a concept."""
         relevant_examples = [
             example for example in code_examples
@@ -222,7 +222,7 @@ class TechnicalContextualizer:
 
         return example_texts
 
-    def validate_technical_accuracy(self, content: str, context: Dict[str, Any]) -> List[str]:
+    def validate_technical_accuracy(self, content: str, context: dict[str, Any]) -> list[str]:
         """Validate technical accuracy of content."""
         issues = []
 
@@ -251,8 +251,8 @@ class DialogueGenerator:
         outline: ContentOutline,
         blog_input: BlogInput,
         synthesized_knowledge: SynthesizedKnowledge,
-        personas: Tuple[ProblemPresenter, SolutionProvider]
-    ) -> List[DialogueSection]:
+        personas: tuple[ProblemPresenter, SolutionProvider]
+    ) -> list[DialogueSection]:
         """
         Generate dialogue sections based on content outline and knowledge.
 
@@ -329,7 +329,7 @@ class DialogueGenerator:
         self,
         outline: ContentOutline,
         context: ConversationContext,
-        personas: Tuple[ProblemPresenter, SolutionProvider],
+        personas: tuple[ProblemPresenter, SolutionProvider],
         flow_plan: DialogueFlow
     ) -> DialogueSection:
         """Generate introduction dialogue section."""
@@ -372,7 +372,7 @@ class DialogueGenerator:
         self,
         content_section,
         context: ConversationContext,
-        personas: Tuple[ProblemPresenter, SolutionProvider],
+        personas: tuple[ProblemPresenter, SolutionProvider],
         is_last_section: bool
     ) -> DialogueSection:
         """Generate dialogue for a main content section."""
@@ -452,9 +452,9 @@ class DialogueGenerator:
     def _generate_code_example_exchange(
         self,
         topic: str,
-        code_examples: List[CodeExample],
+        code_examples: list[CodeExample],
         speaker_name: str
-    ) -> Optional[DialogueExchange]:
+    ) -> DialogueExchange | None:
         """Generate an exchange with a code example."""
         relevant_examples = [
             ex for ex in code_examples
@@ -481,7 +481,7 @@ class DialogueGenerator:
         self,
         outline: ContentOutline,
         context: ConversationContext,
-        personas: Tuple[ProblemPresenter, SolutionProvider],
+        personas: tuple[ProblemPresenter, SolutionProvider],
         flow_plan: DialogueFlow
     ) -> DialogueSection:
         """Generate conclusion dialogue section."""
@@ -500,7 +500,7 @@ class DialogueGenerator:
         ))
 
         # Solution provider provides final advice
-        advice_content = f"Great summary! My top recommendation would be to start with the fundamentals and practice regularly. Focus on understanding the core concepts before moving to advanced topics. And remember, every expert was once a beginner - keep experimenting and learning!"
+        advice_content = "Great summary! My top recommendation would be to start with the fundamentals and practice regularly. Focus on understanding the core concepts before moving to advanced topics. And remember, every expert was once a beginner - keep experimenting and learning!"
 
         exchanges.append(DialogueExchange(
             speaker=solution_provider.profile.name,
@@ -518,7 +518,7 @@ class DialogueGenerator:
             section_type="conclusion"
         )
 
-    async def format_dialogue_as_markdown(self, sections: List[DialogueSection]) -> str:
+    async def format_dialogue_as_markdown(self, sections: list[DialogueSection]) -> str:
         """Format dialogue sections as markdown content."""
         markdown_content = []
 
@@ -552,9 +552,9 @@ class DialogueGenerator:
 
     async def validate_generated_dialogue(
         self,
-        sections: List[DialogueSection],
-        personas: Tuple[ProblemPresenter, SolutionProvider]
-    ) -> Tuple[bool, List[str]]:
+        sections: list[DialogueSection],
+        personas: tuple[ProblemPresenter, SolutionProvider]
+    ) -> tuple[bool, list[str]]:
         """Validate the generated dialogue for quality and consistency."""
         all_exchanges = []
         for section in sections:

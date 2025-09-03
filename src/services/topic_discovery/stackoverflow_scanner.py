@@ -1,14 +1,14 @@
 # services/topic_discovery/stackoverflow_scanner.py
-import asyncio
+from datetime import UTC, datetime
+
 import aiohttp
-from typing import List, Dict
-from datetime import datetime, timezone
+
 
 class StackOverflowScanner:
     def __init__(self):
         self.base_url = "https://api.stackexchange.com/2.3"
 
-    async def scan_trending_tags(self, timeframe: str = "week") -> List[Dict]:
+    async def scan_trending_tags(self, timeframe: str = "week") -> list[dict]:
         """Scan trending tags on Stack Overflow"""
         fromdate = self._get_fromdate(timeframe)
 
@@ -31,7 +31,7 @@ class StackOverflowScanner:
                 "topic": tag["name"],
                 "score": tag["count"],
                 "source": "stackoverflow",
-                "discovered_at": datetime.now(timezone.utc),
+                "discovered_at": datetime.now(UTC),
                 "metadata": {
                     "question_count": tag["count"],
                     "has_synonyms": tag.get("has_synonyms", False)
@@ -40,7 +40,7 @@ class StackOverflowScanner:
 
         return trending_tags
 
-    async def scan_trending_questions(self) -> List[Dict]:
+    async def scan_trending_questions(self) -> list[dict]:
         """Scan trending questions for topic extraction"""
         url = f"{self.base_url}/questions"
         params = {
@@ -63,7 +63,7 @@ class StackOverflowScanner:
                 "score": question["score"],
                 "view_count": question["view_count"],
                 "source": "stackoverflow",
-                "discovered_at": datetime.now(timezone.utc)
+                "discovered_at": datetime.now(UTC)
             })
 
         return trending_questions

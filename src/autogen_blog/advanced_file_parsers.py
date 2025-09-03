@@ -7,7 +7,7 @@ with robust error handling and content extraction capabilities.
 
 import re
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
+from typing import Any
 
 try:
     import PyPDF2
@@ -28,7 +28,7 @@ try:
 except ImportError:
     HAS_OPENPYXL = False
 
-from .research_processor import FileParser, ResearchFile, Insight
+from .research_processor import FileParser, Insight, ResearchFile
 
 
 class PDFParser(FileParser):
@@ -108,7 +108,7 @@ class PDFParser(FileParser):
 
                         # Limit extraction to prevent memory issues
                         if page_num > 100:  # Max 100 pages
-                            self.logger.warning(f"PDF has many pages, limiting to first 100")
+                            self.logger.warning("PDF has many pages, limiting to first 100")
                             break
 
                     except Exception as e:
@@ -168,7 +168,7 @@ class PDFParser(FileParser):
 
         return False
 
-    def _extract_pdf_insights(self, content: str, source_file: str) -> List[Insight]:
+    def _extract_pdf_insights(self, content: str, source_file: str) -> list[Insight]:
         """Extract insights from PDF content."""
         insights = []
 
@@ -272,7 +272,7 @@ class DOCXParser(FileParser):
                 confidence_score=0.0
             )
 
-    async def _extract_docx_content(self, file_path: Path) -> tuple[str, Dict[str, Any]]:
+    async def _extract_docx_content(self, file_path: Path) -> tuple[str, dict[str, Any]]:
         """Extract text and structure information from DOCX file."""
         try:
             doc = docx.Document(str(file_path))
@@ -340,7 +340,7 @@ class DOCXParser(FileParser):
 
         return False
 
-    def _extract_docx_insights(self, content: str, structure_info: Dict, source_file: str) -> List[Insight]:
+    def _extract_docx_insights(self, content: str, structure_info: dict, source_file: str) -> list[Insight]:
         """Extract insights from DOCX content and structure."""
         insights = []
 
@@ -439,7 +439,7 @@ class ExcelParser(FileParser):
                 confidence_score=0.0
             )
 
-    async def _extract_excel_content(self, file_path: Path) -> tuple[str, Dict[str, Any]]:
+    async def _extract_excel_content(self, file_path: Path) -> tuple[str, dict[str, Any]]:
         """Extract data and structure from Excel file."""
         try:
             workbook = openpyxl.load_workbook(str(file_path), data_only=True)
@@ -482,7 +482,7 @@ class ExcelParser(FileParser):
             self.logger.error(f"Failed to extract content from Excel: {e}")
             raise
 
-    def _extract_excel_insights(self, content: str, structure_info: Dict, source_file: str) -> List[Insight]:
+    def _extract_excel_insights(self, content: str, structure_info: dict, source_file: str) -> list[Insight]:
         """Extract insights from Excel content."""
         insights = []
 
@@ -524,7 +524,7 @@ class CSVParser(FileParser):
             metadata = self._get_file_metadata(file_path)
 
             # Read CSV content
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding='utf-8', errors='ignore') as f:
                 content = f.read(1024 * 100)  # Limit to 100KB
 
             # Extract basic structure
@@ -575,7 +575,7 @@ class CSVParser(FileParser):
                 confidence_score=0.0
             )
 
-    def _extract_csv_insights(self, content: str, source_file: str) -> List[Insight]:
+    def _extract_csv_insights(self, content: str, source_file: str) -> list[Insight]:
         """Extract insights from CSV content."""
         insights = []
 
@@ -593,7 +593,7 @@ class CSVParser(FileParser):
         return insights
 
 
-def get_advanced_parsers() -> List[FileParser]:
+def get_advanced_parsers() -> list[FileParser]:
     """Get list of all available advanced parsers."""
     parsers = [
         CSVParser(),  # Always available
@@ -611,7 +611,7 @@ def get_advanced_parsers() -> List[FileParser]:
     return parsers
 
 
-def get_missing_dependencies() -> List[str]:
+def get_missing_dependencies() -> list[str]:
     """Get list of missing optional dependencies."""
     missing = []
 

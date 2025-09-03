@@ -6,17 +6,19 @@ including dialogue naturalness scoring, technical accuracy validation, and perso
 consistency measurement.
 """
 
+import logging
 import re
-import asyncio
-from typing import Dict, List, Tuple, Set, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
-import logging
 
-from .persona_system import PersonaProfile, DialogueExchange, DialogueSection, PersonaManager
 from .conversational_writer_agent import ConversationalBlogContent
 from .information_synthesizer import SynthesizedKnowledge
-from .multi_agent_models import BlogGenerationError
+from .persona_system import (
+    DialogueExchange,
+    DialogueSection,
+    PersonaManager,
+    PersonaProfile,
+)
 
 
 class QualityLevel(str, Enum):
@@ -53,8 +55,8 @@ class DialogueNaturalnessScore:
     persona_consistency_score: float = 0.0
     technical_integration_score: float = 0.0
     engagement_score: float = 0.0
-    issues: List[ValidationIssue] = field(default_factory=list)
-    strengths: List[str] = field(default_factory=list)
+    issues: list[ValidationIssue] = field(default_factory=list)
+    strengths: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -65,8 +67,8 @@ class TechnicalAccuracyScore:
     code_quality_score: float = 0.0
     research_alignment_score: float = 0.0
     depth_appropriateness_score: float = 0.0
-    issues: List[ValidationIssue] = field(default_factory=list)
-    validated_concepts: List[str] = field(default_factory=list)
+    issues: list[ValidationIssue] = field(default_factory=list)
+    validated_concepts: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -77,8 +79,8 @@ class PersonaConsistencyScore:
     role_adherence_score: float = 0.0
     expertise_level_score: float = 0.0
     communication_style_score: float = 0.0
-    issues: List[ValidationIssue] = field(default_factory=list)
-    persona_violations: List[Dict[str, str]] = field(default_factory=list)
+    issues: list[ValidationIssue] = field(default_factory=list)
+    persona_violations: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -91,8 +93,8 @@ class ConversationalQualityReport:
     persona_consistency: PersonaConsistencyScore = field(default_factory=PersonaConsistencyScore)
 
     # Aggregated results
-    all_issues: List[ValidationIssue] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    all_issues: list[ValidationIssue] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
     validation_timestamp: str = ""
 
     def add_issue(self, issue: ValidationIssue):
@@ -127,8 +129,8 @@ class DialogueNaturalnessValidator:
 
     async def validate_naturalness(
         self,
-        dialogue_sections: List[DialogueSection],
-        personas: Optional[Tuple[PersonaProfile, PersonaProfile]] = None
+        dialogue_sections: list[DialogueSection],
+        personas: tuple[PersonaProfile, PersonaProfile] | None = None
     ) -> DialogueNaturalnessScore:
         """Validate dialogue naturalness and flow."""
         score = DialogueNaturalnessScore()
@@ -183,7 +185,7 @@ class DialogueNaturalnessValidator:
 
         return score
 
-    async def _validate_conversation_flow(self, exchanges: List[DialogueExchange], score: DialogueNaturalnessScore) -> float:
+    async def _validate_conversation_flow(self, exchanges: list[DialogueExchange], score: DialogueNaturalnessScore) -> float:
         """Validate conversation flow and transitions."""
         flow_score = 1.0
 
@@ -232,7 +234,7 @@ class DialogueNaturalnessValidator:
 
         return max(0.0, flow_score)
 
-    def _assess_transition_quality(self, exchanges: List[DialogueExchange]) -> float:
+    def _assess_transition_quality(self, exchanges: list[DialogueExchange]) -> float:
         """Assess quality of transitions between exchanges."""
         if len(exchanges) < 2:
             return 1.0
@@ -263,7 +265,7 @@ class DialogueNaturalnessValidator:
 
         return good_transitions / total_transitions if total_transitions > 0 else 1.0
 
-    async def _validate_engagement_level(self, exchanges: List[DialogueExchange], score: DialogueNaturalnessScore) -> float:
+    async def _validate_engagement_level(self, exchanges: list[DialogueExchange], score: DialogueNaturalnessScore) -> float:
         """Validate engagement level of the conversation."""
         engagement_score = 1.0
 
@@ -312,7 +314,7 @@ class DialogueNaturalnessValidator:
 
         return max(0.0, engagement_score)
 
-    async def _validate_technical_integration(self, exchanges: List[DialogueExchange], score: DialogueNaturalnessScore) -> float:
+    async def _validate_technical_integration(self, exchanges: list[DialogueExchange], score: DialogueNaturalnessScore) -> float:
         """Validate how naturally technical concepts are integrated."""
         integration_score = 1.0
 
@@ -364,7 +366,7 @@ class TechnicalAccuracyValidator:
     async def validate_accuracy(
         self,
         content: ConversationalBlogContent,
-        research_knowledge: Optional[SynthesizedKnowledge] = None
+        research_knowledge: SynthesizedKnowledge | None = None
     ) -> TechnicalAccuracyScore:
         """Validate technical accuracy of conversational content."""
         score = TechnicalAccuracyScore()
@@ -400,11 +402,11 @@ class TechnicalAccuracyValidator:
             score.depth_appropriateness_score
         ]
 
-        score.overall_score = sum(w * s for w, s in zip(weights, scores))
+        score.overall_score = sum(w * s for w, s in zip(weights, scores, strict=False))
 
         return score
 
-    async def _validate_concept_accuracy(self, exchanges: List[DialogueExchange], score: TechnicalAccuracyScore) -> float:
+    async def _validate_concept_accuracy(self, exchanges: list[DialogueExchange], score: TechnicalAccuracyScore) -> float:
         """Validate accuracy of technical concepts mentioned."""
         # This is a simplified validation - in a real implementation,
         # you might use a knowledge base or external APIs
@@ -482,7 +484,7 @@ class TechnicalAccuracyValidator:
 
     async def _validate_research_alignment(
         self,
-        exchanges: List[DialogueExchange],
+        exchanges: list[DialogueExchange],
         research_knowledge: SynthesizedKnowledge,
         score: TechnicalAccuracyScore
     ) -> float:
@@ -517,7 +519,7 @@ class TechnicalAccuracyValidator:
 
         return max(0.0, alignment_score)
 
-    async def _validate_depth_appropriateness(self, exchanges: List[DialogueExchange], score: TechnicalAccuracyScore) -> float:
+    async def _validate_depth_appropriateness(self, exchanges: list[DialogueExchange], score: TechnicalAccuracyScore) -> float:
         """Validate that technical depth is appropriate."""
         # This is a simplified heuristic-based approach
         depth_score = 1.0
@@ -554,7 +556,7 @@ class PersonaConsistencyValidator:
     async def validate_consistency(
         self,
         content: ConversationalBlogContent,
-        persona_profiles: Optional[Tuple[PersonaProfile, PersonaProfile]] = None
+        persona_profiles: tuple[PersonaProfile, PersonaProfile] | None = None
     ) -> PersonaConsistencyScore:
         """Validate persona consistency in conversational content."""
         score = PersonaConsistencyScore()
@@ -599,7 +601,7 @@ class PersonaConsistencyValidator:
     async def _validate_voice_consistency(
         self,
         content: ConversationalBlogContent,
-        persona_profiles: Tuple[PersonaProfile, PersonaProfile],
+        persona_profiles: tuple[PersonaProfile, PersonaProfile],
         score: PersonaConsistencyScore
     ) -> float:
         """Validate consistency of persona voices."""
@@ -628,7 +630,7 @@ class PersonaConsistencyValidator:
     async def _validate_role_adherence(
         self,
         content: ConversationalBlogContent,
-        persona_profiles: Tuple[PersonaProfile, PersonaProfile],
+        persona_profiles: tuple[PersonaProfile, PersonaProfile],
         score: PersonaConsistencyScore
     ) -> float:
         """Validate adherence to persona roles."""
@@ -637,7 +639,7 @@ class PersonaConsistencyValidator:
     async def _validate_expertise_level(
         self,
         content: ConversationalBlogContent,
-        persona_profiles: Tuple[PersonaProfile, PersonaProfile],
+        persona_profiles: tuple[PersonaProfile, PersonaProfile],
         score: PersonaConsistencyScore
     ) -> float:
         """Validate that personas maintain appropriate expertise levels."""
@@ -646,7 +648,7 @@ class PersonaConsistencyValidator:
     async def _validate_communication_style(
         self,
         content: ConversationalBlogContent,
-        persona_profiles: Tuple[PersonaProfile, PersonaProfile],
+        persona_profiles: tuple[PersonaProfile, PersonaProfile],
         score: PersonaConsistencyScore
     ) -> float:
         """Validate communication style consistency."""
@@ -665,8 +667,8 @@ class ConversationalQualityValidator:
     async def validate_quality(
         self,
         content: ConversationalBlogContent,
-        persona_profiles: Optional[Tuple[PersonaProfile, PersonaProfile]] = None,
-        research_knowledge: Optional[SynthesizedKnowledge] = None
+        persona_profiles: tuple[PersonaProfile, PersonaProfile] | None = None,
+        research_knowledge: SynthesizedKnowledge | None = None
     ) -> ConversationalQualityReport:
         """
         Perform comprehensive quality validation of conversational content.
@@ -735,7 +737,7 @@ class ConversationalQualityValidator:
 
         return report
 
-    def _generate_recommendations(self, report: ConversationalQualityReport) -> List[str]:
+    def _generate_recommendations(self, report: ConversationalQualityReport) -> list[str]:
         """Generate actionable recommendations based on validation results."""
         recommendations = []
 

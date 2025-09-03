@@ -5,21 +5,20 @@ This agent specializes in generating code examples, identifying code opportuniti
 and creating well-commented, practical code snippets for technical content.
 """
 
-from typing import Optional, List, Dict, Any
 import re
-import json
+from typing import Any
 
 from .base_agent import BaseAgent
 from .multi_agent_models import (
     AgentConfig,
-    BlogContent,
-    ContentOutline,
-    CodeOpportunity,
-    CodeExample,
-    CodeBlock,
-    MessageType,
     AgentMessage,
-    ContentQualityError
+    BlogContent,
+    CodeBlock,
+    CodeExample,
+    CodeOpportunity,
+    ContentOutline,
+    ContentQualityError,
+    MessageType,
 )
 
 
@@ -35,11 +34,11 @@ class CodeAgent(BaseAgent):
     - Formatting code properly for markdown
     - Selecting appropriate programming languages
     """
-    
+
     def __init__(self, config: AgentConfig):
         """Initialize the Code Agent."""
         super().__init__("Code", config)
-    
+
     def _get_system_message(self) -> str:
         """Get the system message that defines this agent's role and behavior."""
         return """
@@ -82,12 +81,12 @@ Your code examples should:
 
 Always provide structured responses in JSON format with code blocks, explanations, and integration guidance.
 """
-    
+
     async def identify_code_opportunities(
         self,
         content: BlogContent,
-        outline: Optional[ContentOutline] = None
-    ) -> List[CodeOpportunity]:
+        outline: ContentOutline | None = None
+    ) -> list[CodeOpportunity]:
         """
         Identify opportunities to add code examples to content.
         
@@ -104,28 +103,28 @@ Always provide structured responses in JSON format with code blocks, explanation
         try:
             # Build opportunity identification prompt
             prompt = self._build_opportunity_prompt(content, outline)
-            
+
             # Query the agent
             response = await self.query_agent(
                 prompt,
                 message_type=MessageType.CODE
             )
-            
+
             # Parse the opportunities response
             opportunities = await self._parse_opportunities_response(response)
-            
+
             self.logger.info(f"Identified {len(opportunities)} code opportunities")
             return opportunities
-            
+
         except Exception as e:
             self.logger.error(f"Failed to identify code opportunities: {e}")
             raise ContentQualityError(f"Code opportunity identification failed: {e}")
-    
+
     async def generate_code_examples(
         self,
-        opportunities: List[CodeOpportunity],
+        opportunities: list[CodeOpportunity],
         content_context: str = ""
-    ) -> List[CodeExample]:
+    ) -> list[CodeExample]:
         """
         Generate code examples for the identified opportunities.
         
@@ -141,32 +140,32 @@ Always provide structured responses in JSON format with code blocks, explanation
         """
         try:
             code_examples = []
-            
+
             for opportunity in opportunities:
                 # Build code generation prompt for this opportunity
                 prompt = self._build_code_generation_prompt(opportunity, content_context)
-                
+
                 # Query the agent
                 response = await self.query_agent(
                     prompt,
                     message_type=MessageType.CODE
                 )
-                
+
                 # Parse the code response
                 code_example = await self._parse_code_response(response, opportunity)
                 code_examples.append(code_example)
-            
+
             self.logger.info(f"Generated {len(code_examples)} code examples")
             return code_examples
-            
+
         except Exception as e:
             self.logger.error(f"Failed to generate code examples: {e}")
             raise ContentQualityError(f"Code example generation failed: {e}")
-    
+
     def _build_opportunity_prompt(
         self,
         content: BlogContent,
-        outline: Optional[ContentOutline] = None
+        outline: ContentOutline | None = None
     ) -> str:
         """Build prompt for identifying code opportunities."""
         outline_context = ""
@@ -175,7 +174,7 @@ Always provide structured responses in JSON format with code blocks, explanation
             if code_sections:
                 section_names = [s.heading for s in code_sections]
                 outline_context = f"\\nSections marked for code examples: {', '.join(section_names)}"
-        
+
         return f"""
 Analyze the following blog content and identify opportunities where code examples would enhance understanding and provide practical value to readers:
 
@@ -223,7 +222,7 @@ Provide your analysis in this exact JSON format:
 
 Focus on opportunities that will genuinely enhance reader understanding and provide practical value.
 """
-    
+
     def _build_code_generation_prompt(
         self,
         opportunity: CodeOpportunity,
@@ -288,17 +287,17 @@ Provide your code example in this exact JSON format:
 
 Ensure the code is practical, educational, and directly supports the content's learning objectives.
 """
-    
+
     async def _parse_opportunities_response(
         self,
         response: AgentMessage
-    ) -> List[CodeOpportunity]:
+    ) -> list[CodeOpportunity]:
         """Parse code opportunity identification response."""
         try:
             opportunities_data = self.parse_json_response(response.content)
             if not opportunities_data:
                 raise ContentQualityError("Failed to parse opportunities response as JSON")
-            
+
             opportunities = []
             for opp_data in opportunities_data.get("opportunities", []):
                 opportunity = CodeOpportunity(
@@ -308,16 +307,16 @@ Ensure the code is practical, educational, and directly supports the content's l
                     complexity_level=opp_data.get("complexity_level", "intermediate")
                 )
                 opportunities.append(opportunity)
-            
+
             # Validate opportunities
             self._validate_opportunities(opportunities)
-            
+
             return opportunities
-            
+
         except Exception as e:
             self.logger.error(f"Failed to parse opportunities response: {e}")
             raise ContentQualityError(f"Opportunities parsing failed: {e}")
-    
+
     async def _parse_code_response(
         self,
         response: AgentMessage,
@@ -328,7 +327,7 @@ Ensure the code is practical, educational, and directly supports the content's l
             code_data = self.parse_json_response(response.content)
             if not code_data:
                 raise ContentQualityError("Failed to parse code response as JSON")
-            
+
             # Extract code block data
             code_block_data = code_data.get("code_block", {})
             code_block = CodeBlock(
@@ -338,77 +337,77 @@ Ensure the code is practical, educational, and directly supports the content's l
                 line_numbers=code_block_data.get("line_numbers", True),
                 filename=code_block_data.get("filename")
             )
-            
+
             # Create code example
             code_example = CodeExample(
                 opportunity=opportunity,
                 code_block=code_block,
                 integration_note=code_data.get("integration_note", "")
             )
-            
+
             # Validate code quality
             self._validate_code_example(code_example)
-            
+
             return code_example
-            
+
         except Exception as e:
             self.logger.error(f"Failed to parse code response: {e}")
             raise ContentQualityError(f"Code response parsing failed: {e}")
-    
-    def _validate_opportunities(self, opportunities: List[CodeOpportunity]) -> None:
+
+    def _validate_opportunities(self, opportunities: list[CodeOpportunity]) -> None:
         """Validate code opportunities."""
         if not opportunities:
             self.logger.info("No code opportunities identified")
             return
-        
+
         for opp in opportunities:
             if not opp.section_title.strip():
                 raise ContentQualityError("Code opportunity missing section title")
-            
+
             if not opp.description.strip():
                 raise ContentQualityError("Code opportunity missing description")
-            
+
             if len(opp.description) < 10:
                 self.logger.warning(f"Very short description for opportunity: {opp.description}")
-        
+
         self.logger.info("Code opportunities validation passed")
-    
+
     def _validate_code_example(self, example: CodeExample) -> None:
         """Validate code example quality."""
         if not example.code_block.code.strip():
             raise ContentQualityError("Code example is empty")
-        
+
         if len(example.code_block.code.strip()) < 20:
             raise ContentQualityError("Code example too short to be meaningful")
-        
+
         # Basic syntax checks for common languages
         code = example.code_block.code
         language = example.code_block.language.lower()
-        
+
         # Check for obvious syntax issues
         if language == "python":
             if code.count("(") != code.count(")"):
                 self.logger.warning("Unbalanced parentheses in Python code")
-            
+
             if "def " in code and not re.search(r'def\s+\w+\s*\([^)]*\)\s*:', code):
                 self.logger.warning("Malformed function definition in Python code")
-        
+
         elif language in ["javascript", "js"]:
             if code.count("{") != code.count("}"):
                 self.logger.warning("Unbalanced braces in JavaScript code")
-        
+
         elif language == "java":
             if "public class" in code and not re.search(r'public\s+class\s+\w+', code):
                 self.logger.warning("Malformed class definition in Java code")
-        
+
         # Check for explanation quality
         if not example.code_block.explanation.strip():
             self.logger.warning("Code example missing explanation")
         elif len(example.code_block.explanation) < 20:
             self.logger.warning("Code explanation very brief")
-        
+
         self.logger.info("Code example validation passed")
-    
+
     def _is_technical_content(self, content: str) -> bool:
         """Determine if content is technical and likely to benefit from code examples."""
         technical_indicators = [
@@ -417,12 +416,12 @@ Ensure the code is practical, educational, and directly supports the content's l
             "framework", "database", "query", "install", "configure", "setup",
             "debug", "error", "exception", "syntax", "compile", "execute"
         ]
-        
+
         content_lower = content.lower()
         technical_count = sum(1 for indicator in technical_indicators if indicator in content_lower)
-        
+
         return technical_count >= 3
-    
+
     async def enhance_existing_code(
         self,
         content: BlogContent,
@@ -441,20 +440,20 @@ Ensure the code is practical, educational, and directly supports the content's l
         if not content.code_blocks:
             self.logger.info("No existing code blocks to enhance")
             return content
-        
+
         try:
             enhanced_blocks = []
-            
+
             for code_block in content.code_blocks:
                 # Build enhancement prompt
                 prompt = self._build_enhancement_prompt(code_block, improvement_focus)
-                
+
                 # Query the agent
                 response = await self.query_agent(
                     prompt,
                     message_type=MessageType.CODE
                 )
-                
+
                 # Parse enhanced code
                 enhanced_data = self.parse_json_response(response.content)
                 if enhanced_data and enhanced_data.get("enhanced_code"):
@@ -468,7 +467,7 @@ Ensure the code is practical, educational, and directly supports the content's l
                     enhanced_blocks.append(enhanced_block)
                 else:
                     enhanced_blocks.append(code_block)  # Keep original if enhancement fails
-            
+
             # Update content with enhanced code blocks
             enhanced_content = BlogContent(
                 title=content.title,
@@ -477,14 +476,14 @@ Ensure the code is practical, educational, and directly supports the content's l
                 code_blocks=enhanced_blocks,
                 metadata=content.metadata
             )
-            
+
             self.logger.info(f"Enhanced {len(enhanced_blocks)} code blocks")
             return enhanced_content
-            
+
         except Exception as e:
             self.logger.error(f"Failed to enhance code blocks: {e}")
             return content  # Return original on failure
-    
+
     def _build_enhancement_prompt(
         self,
         code_block: CodeBlock,
@@ -526,38 +525,38 @@ Provide the enhanced version in this JSON format:
 
 Maintain the original functionality while making the code more educational and professional.
 """
-    
+
     def _update_content_with_enhanced_code(
         self,
         content: str,
-        enhanced_blocks: List[CodeBlock]
+        enhanced_blocks: list[CodeBlock]
     ) -> str:
         """Update content with enhanced code blocks."""
-        # This is a simplified approach - in practice, you might want more sophisticated 
+        # This is a simplified approach - in practice, you might want more sophisticated
         # content replacement that matches original code blocks to enhanced ones
-        
+
         enhanced_content = content
-        
+
         # Simple replacement strategy - replace code blocks in order
         code_pattern = r'```(\w+)\n([\\s\\S]*?)```'
         matches = list(re.finditer(code_pattern, enhanced_content))
-        
+
         # Replace from last to first to avoid position shifts
-        for i, (match, enhanced_block) in enumerate(zip(reversed(matches), reversed(enhanced_blocks))):
+        for i, (match, enhanced_block) in enumerate(zip(reversed(matches), reversed(enhanced_blocks), strict=False)):
             if i < len(enhanced_blocks):
                 replacement = f"```{enhanced_block.language}\\n{enhanced_block.code}\\n```"
                 enhanced_content = (
-                    enhanced_content[:match.start()] + 
-                    replacement + 
+                    enhanced_content[:match.start()] +
+                    replacement +
                     enhanced_content[match.end():]
                 )
-        
+
         return enhanced_content
-    
+
     async def suggest_code_improvements(
         self,
         content: BlogContent
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Suggest improvements for code examples in content.
         
@@ -573,20 +572,20 @@ Maintain the original functionality while making the code more educational and p
                 "suggestions": ["Consider adding code examples to illustrate concepts"],
                 "opportunities": []
             }
-        
+
         suggestions = {
             "has_code": True,
             "code_quality_score": 0.0,
             "suggestions": [],
             "specific_improvements": {}
         }
-        
+
         quality_factors = []
-        
+
         for i, code_block in enumerate(content.code_blocks):
             block_key = f"code_block_{i+1}"
             block_suggestions = []
-            
+
             # Check code length and complexity
             code_lines = code_block.code.strip().split('\\n')
             if len(code_lines) < 3:
@@ -595,34 +594,34 @@ Maintain the original functionality while making the code more educational and p
                 block_suggestions.append("Consider breaking this into smaller, focused examples")
             else:
                 quality_factors.append(0.2)
-            
+
             # Check for comments
             comment_lines = [line for line in code_lines if line.strip().startswith(('#', '//', '/*'))]
             if len(comment_lines) == 0:
                 block_suggestions.append("Add comments to explain key concepts")
             elif len(comment_lines) / len(code_lines) > 0.1:
                 quality_factors.append(0.2)
-            
+
             # Check explanation quality
             if not code_block.explanation or len(code_block.explanation) < 50:
                 block_suggestions.append("Expand the code explanation")
             else:
                 quality_factors.append(0.2)
-            
+
             # Check for practical applicability
             if any(word in code_block.code.lower() for word in ['example', 'demo', 'test']):
                 quality_factors.append(0.1)
-            
+
             if block_suggestions:
                 suggestions["specific_improvements"][block_key] = block_suggestions
-        
+
         # Overall suggestions
         if len(content.code_blocks) == 1:
             suggestions["suggestions"].append("Consider adding more code examples for comprehensive coverage")
-        
+
         if all(cb.language == content.code_blocks[0].language for cb in content.code_blocks):
             suggestions["suggestions"].append("Consider showing examples in multiple languages if applicable")
-        
+
         suggestions["code_quality_score"] = min(sum(quality_factors), 1.0) * 10
-        
+
         return suggestions

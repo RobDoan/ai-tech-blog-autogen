@@ -1,10 +1,11 @@
-import os
 import logging
-import requests
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from src.py_env import serpapi_api_key, newsapi_api_key, apify_api_token
+
+import requests
+
+from src.py_env import apify_api_token, newsapi_api_key, serpapi_api_key
+
 
 @dataclass
 class TrendCandidate:
@@ -54,7 +55,7 @@ class TrendSpotter:
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
 
-    def get_weekly_trend(self) -> Optional[Dict]:
+    def get_weekly_trend(self) -> dict | None:
         """
         Main method to identify the top weekly trend.
 
@@ -97,7 +98,7 @@ class TrendSpotter:
             self.logger.error(f"Error in trend identification: {str(e)}")
             return self._fallback_to_previous_trend()
 
-    def fetch_trend_candidates(self) -> List[TrendCandidate]:
+    def fetch_trend_candidates(self) -> list[TrendCandidate]:
         """
         Fetch trending topics from Google Trends via SerpApi.
 
@@ -145,7 +146,7 @@ class TrendSpotter:
             self.logger.error(f"Error fetching trends from SerpApi: {str(e)}")
             return self._get_mock_trends()
 
-    def validate_media_saturation(self, candidates: List[TrendCandidate]) -> List[TrendCandidate]:
+    def validate_media_saturation(self, candidates: list[TrendCandidate]) -> list[TrendCandidate]:
         """
         Validate media coverage for each candidate using NewsAPI.
 
@@ -188,7 +189,7 @@ class TrendSpotter:
 
         return candidates
 
-    def validate_social_velocity(self, candidates: List[TrendCandidate]) -> List[TrendCandidate]:
+    def validate_social_velocity(self, candidates: list[TrendCandidate]) -> list[TrendCandidate]:
         """
         Validate social media velocity using Apify Twitter scraper.
 
@@ -234,7 +235,7 @@ class TrendSpotter:
 
         return candidates
 
-    def score_and_select(self, candidates: List[TrendCandidate]) -> Optional[TrendCandidate]:
+    def score_and_select(self, candidates: list[TrendCandidate]) -> TrendCandidate | None:
         """
         Calculate scores for all candidates and select the best one.
 
@@ -281,7 +282,7 @@ class TrendSpotter:
         selected = max(candidates, key=lambda c: c.final_score)
         return selected
 
-    def _fallback_to_previous_trend(self) -> Optional[Dict]:
+    def _fallback_to_previous_trend(self) -> dict | None:
         """Fallback mechanism when all APIs fail"""
         self.logger.warning("Falling back to previous week's trend")
 
@@ -309,7 +310,7 @@ class TrendSpotter:
             'fallback': True
         }
 
-    def _get_mock_trends(self) -> List[TrendCandidate]:
+    def _get_mock_trends(self) -> list[TrendCandidate]:
         """Mock trend data for testing"""
         return [
             TrendCandidate(topic="OpenAI GPT-5", search_rank=1),
@@ -319,14 +320,14 @@ class TrendSpotter:
             TrendCandidate(topic="5G Networks", search_rank=5)
         ]
 
-    def _add_mock_article_counts(self, candidates: List[TrendCandidate]) -> List[TrendCandidate]:
+    def _add_mock_article_counts(self, candidates: list[TrendCandidate]) -> list[TrendCandidate]:
         """Add mock article counts for testing"""
         import random
         for candidate in candidates:
             candidate.article_count = random.randint(5, 50)
         return candidates
 
-    def _add_mock_tweet_volumes(self, candidates: List[TrendCandidate]) -> List[TrendCandidate]:
+    def _add_mock_tweet_volumes(self, candidates: list[TrendCandidate]) -> list[TrendCandidate]:
         """Add mock tweet volumes for testing"""
         import random
         for candidate in candidates:

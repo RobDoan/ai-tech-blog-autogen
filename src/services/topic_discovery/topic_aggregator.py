@@ -1,22 +1,22 @@
 # services/topic_discovery/topic_aggregator.py
-from typing import List, Dict
-from datetime import datetime, timedelta
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
 
 from .github_scanner import GitHubTrendingScanner
-from .stackoverflow_scanner import StackOverflowScanner
 from .news_scanner import TechNewsScanner
+from .stackoverflow_scanner import StackOverflowScanner
+
 
 @dataclass
 class AggregatedTopic:
     topic: str
     total_score: float
-    sources: List[str]
+    sources: list[str]
     first_seen: datetime
     last_updated: datetime
     trend_direction: str  # 'rising', 'stable', 'declining'
-    metadata: Dict
+    metadata: dict
 
 class TopicAggregator:
     def __init__(self, db_connection):
@@ -27,7 +27,7 @@ class TopicAggregator:
             'tech_news': TechNewsScanner()
         }
 
-    async def discover_topics(self) -> List[AggregatedTopic]:
+    async def discover_topics(self) -> list[AggregatedTopic]:
         """Run all scanners and aggregate topics"""
         all_topics = []
 
@@ -53,7 +53,7 @@ class TopicAggregator:
 
         return aggregated
 
-    def _aggregate_topics(self, topics: List[Dict]) -> List[AggregatedTopic]:
+    def _aggregate_topics(self, topics: list[dict]) -> list[AggregatedTopic]:
         """Aggregate topics from multiple sources"""
         topic_map = {}
 
