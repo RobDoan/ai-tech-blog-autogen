@@ -259,7 +259,7 @@ class AISemanticAnalyzer:
 
 Your task is to perform deep semantic analysis of technical articles and extract:
 1. Implicit topics not explicitly stated in titles
-2. Technical concepts with implementation details  
+2. Technical concepts with implementation details
 3. Problems solved and solutions implemented
 4. Performance improvements with specific metrics
 5. Key insights for generating specific, actionable blog titles

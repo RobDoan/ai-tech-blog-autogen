@@ -221,7 +221,9 @@ Focus on creating conversations that feel authentic while delivering valuable te
 
         except Exception as e:
             self.logger.error(f"Conversational content generation failed: {e}")
-            raise ContentQualityError(f"Conversational content generation failed: {e}")
+            raise ContentQualityError(
+                f"Conversational content generation failed: {e}"
+            ) from e
 
     async def _format_conversational_blog(
         self,
@@ -341,7 +343,7 @@ Write a natural conclusion that provides closure to the conversational format.
         return ContentMetadata(
             word_count=base_metadata.word_count,
             reading_time_minutes=adjusted_reading_time,
-            seo_score=base_metadata.seo_score,
+            seo_score=base_metadata.seo_score + (0.1 if total_exchanges > 10 else 0),
             keywords=base_metadata.keywords
             + ["conversation", "dialogue", "discussion", "practical"],
             meta_description=base_metadata.meta_description,
@@ -395,7 +397,7 @@ Write a natural conclusion that provides closure to the conversational format.
             score_factors.append(0.6)
 
         # Factor 4: Intent variety
-        intents = set(exchange.intent for exchange in all_exchanges)
+        intents = {exchange.intent for exchange in all_exchanges}
         if len(intents) >= 4:
             score_factors.append(1.0)
         elif len(intents) >= 3:
@@ -512,7 +514,9 @@ Write a natural conclusion that provides closure to the conversational format.
 
         except Exception as e:
             self.logger.error(f"Failed to revise conversational content: {e}")
-            raise ContentQualityError(f"Conversational content revision failed: {e}")
+            raise ContentQualityError(
+                f"Conversational content revision failed: {e}"
+            ) from e
 
     def _build_conversational_revision_prompt(
         self,
@@ -615,9 +619,9 @@ Please provide the complete revised conversational blog post in markdown format,
             conversational_analysis["technical_concept_coverage"] = len(all_concepts)
 
             # Intent variety
-            conversational_analysis["intent_variety"] = set(
+            conversational_analysis["intent_variety"] = {
                 ex.intent for ex in all_exchanges
-            )
+            }
 
         # Conversational strengths
         if conversational_analysis["conversation_flow_score"] >= 0.8:

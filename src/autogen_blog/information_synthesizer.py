@@ -149,7 +149,7 @@ class InformationExtractor:
             content = file_data.content.lower()
 
             # Extract technical concepts using patterns
-            for category, pattern in self.tech_patterns.items():
+            for _category, pattern in self.tech_patterns.items():
                 matches = re.findall(pattern, content, re.IGNORECASE)
 
                 for match in matches:
@@ -473,7 +473,9 @@ class InformationSynthesizer:
 
         except Exception as e:
             self.logger.error(f"Knowledge synthesis failed: {e}")
-            raise InformationSynthesisError(f"Failed to synthesize knowledge: {e}")
+            raise InformationSynthesisError(
+                f"Failed to synthesize knowledge: {e}"
+            ) from e
 
     async def _generate_technical_details(
         self, concepts: list[TechnicalConcept], research_files: list[ResearchFile]

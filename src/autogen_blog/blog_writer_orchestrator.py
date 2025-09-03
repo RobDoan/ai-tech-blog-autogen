@@ -222,7 +222,7 @@ class BlogWriterOrchestrator:
 
         except Exception as e:
             self.logger.error(f"Failed to create outline: {e}")
-            raise BlogGenerationError(f"Content outline creation failed: {e}")
+            raise BlogGenerationError(f"Content outline creation failed: {e}") from e
 
     async def _generate_initial_content(
         self, outline: ContentOutline, blog_input: BlogInput
@@ -250,7 +250,7 @@ class BlogWriterOrchestrator:
 
         except Exception as e:
             self.logger.error(f"Failed to generate initial content: {e}")
-            raise BlogGenerationError(f"Initial content generation failed: {e}")
+            raise BlogGenerationError(f"Initial content generation failed: {e}") from e
 
     async def _review_and_refine_content(
         self, content: BlogContent, outline: ContentOutline, blog_input: BlogInput
@@ -319,7 +319,7 @@ class BlogWriterOrchestrator:
                 self.logger.error(f"Error in review iteration {iteration + 1}: {e}")
                 if iteration == 0:
                     # If first iteration fails, we can't proceed
-                    raise BlogGenerationError(f"Content review failed: {e}")
+                    raise BlogGenerationError(f"Content review failed: {e}") from e
                 else:
                     # Return the last working version
                     self.logger.warning(

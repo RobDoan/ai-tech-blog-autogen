@@ -140,14 +140,14 @@ class BaseAgent(ABC):
                 if attempt == max_retries:
                     raise AgentCommunicationError(
                         f"Agent query timed out after {max_retries + 1} attempts"
-                    )
+                    ) from e
 
             except Exception as e:
                 self.logger.warning(f"Attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries:
                     raise AgentCommunicationError(
                         f"Agent query failed after {max_retries + 1} attempts: {e}"
-                    )
+                    ) from e
 
             # Exponential backoff between retries
             if attempt < max_retries:
@@ -338,7 +338,7 @@ class MessageParser:
         try:
             return template.format(**kwargs)
         except KeyError as e:
-            raise BlogGenerationError(f"Missing template variable: {e}")
+            raise BlogGenerationError(f"Missing template variable: {e}") from e
 
     @staticmethod
     def extract_sections(content: str, section_markers: list[str]) -> dict[str, str]:

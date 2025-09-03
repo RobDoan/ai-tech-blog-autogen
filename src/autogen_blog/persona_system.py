@@ -336,7 +336,7 @@ class PersonaManager:
 
         except Exception as e:
             self.logger.error(f"Failed to create personas: {e}")
-            raise PersonaError(f"Persona creation failed: {e}")
+            raise PersonaError(f"Persona creation failed: {e}") from e
 
     def _setup_consistency_rules(self, config: PersonaConfig) -> None:
         """Set up consistency rules for personas."""
@@ -440,7 +440,7 @@ class PersonaManager:
             re.IGNORECASE,
         )
 
-        return list(set(term.lower() for term in technical_terms))
+        return list({term.lower() for term in technical_terms})
 
     def _validate_speaker_consistency(self, exchange: DialogueExchange) -> list[str]:
         """Validate consistency for a single exchange."""
@@ -450,7 +450,7 @@ class PersonaManager:
         if not persona:
             return [f"Unknown speaker: {exchange.speaker}"]
 
-        rules = self.consistency_rules.get(exchange.speaker, [])
+        self.consistency_rules.get(exchange.speaker, [])
         content_lower = exchange.content.lower()
 
         # Check role-specific consistency
@@ -706,7 +706,7 @@ def load_persona_config_from_file(config_path: Path) -> PersonaConfig:
 
     except Exception as e:
         logging.getLogger(__name__).error(f"Failed to load persona config: {e}")
-        raise PersonaError(f"Failed to load persona configuration: {e}")
+        raise PersonaError(f"Failed to load persona configuration: {e}") from e
 
 
 def save_persona_config_to_file(config: PersonaConfig, config_path: Path) -> None:
@@ -721,4 +721,4 @@ def save_persona_config_to_file(config: PersonaConfig, config_path: Path) -> Non
 
     except Exception as e:
         logging.getLogger(__name__).error(f"Failed to save persona config: {e}")
-        raise PersonaError(f"Failed to save persona configuration: {e}")
+        raise PersonaError(f"Failed to save persona configuration: {e}") from e

@@ -113,7 +113,9 @@ Always provide structured responses in JSON format with code blocks, explanation
 
         except Exception as e:
             self.logger.error(f"Failed to identify code opportunities: {e}")
-            raise ContentQualityError(f"Code opportunity identification failed: {e}")
+            raise ContentQualityError(
+                f"Code opportunity identification failed: {e}"
+            ) from e
 
     async def generate_code_examples(
         self, opportunities: list[CodeOpportunity], content_context: str = ""
@@ -152,7 +154,7 @@ Always provide structured responses in JSON format with code blocks, explanation
 
         except Exception as e:
             self.logger.error(f"Failed to generate code examples: {e}")
-            raise ContentQualityError(f"Code example generation failed: {e}")
+            raise ContentQualityError(f"Code example generation failed: {e}") from e
 
     def _build_opportunity_prompt(
         self, content: BlogContent, outline: ContentOutline | None = None
@@ -306,7 +308,7 @@ Ensure the code is practical, educational, and directly supports the content's l
 
         except Exception as e:
             self.logger.error(f"Failed to parse opportunities response: {e}")
-            raise ContentQualityError(f"Opportunities parsing failed: {e}")
+            raise ContentQualityError(f"Opportunities parsing failed: {e}") from e
 
     async def _parse_code_response(
         self, response: AgentMessage, opportunity: CodeOpportunity
@@ -343,7 +345,7 @@ Ensure the code is practical, educational, and directly supports the content's l
 
         except Exception as e:
             self.logger.error(f"Failed to parse code response: {e}")
-            raise ContentQualityError(f"Code response parsing failed: {e}")
+            raise ContentQualityError(f"Code response parsing failed: {e}") from e
 
     def _validate_opportunities(self, opportunities: list[CodeOpportunity]) -> None:
         """Validate code opportunities."""

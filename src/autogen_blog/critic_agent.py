@@ -112,7 +112,7 @@ Always provide structured feedback in JSON format with scores, specific comments
 
         except Exception as e:
             self.logger.error(f"Failed to review content: {e}")
-            raise ContentQualityError(f"Content review failed: {e}")
+            raise ContentQualityError(f"Content review failed: {e}") from e
 
     async def approve_content(
         self, content: BlogContent, feedback: ReviewFeedback
@@ -287,7 +287,7 @@ Focus on providing specific, actionable feedback that will genuinely improve the
 
         except Exception as e:
             self.logger.error(f"Failed to parse review response: {e}")
-            raise ContentQualityError(f"Review response parsing failed: {e}")
+            raise ContentQualityError(f"Review response parsing failed: {e}") from e
 
     def _validate_feedback_quality(self, feedback: ReviewFeedback) -> None:
         """
@@ -327,7 +327,6 @@ Focus on providing specific, actionable feedback that will genuinely improve the
             )
 
         # Validate improvement specificity
-        vague_words = ["better", "more", "improve", "enhance", "fix"]
         specific_improvements = [
             imp
             for imp in feedback.improvements

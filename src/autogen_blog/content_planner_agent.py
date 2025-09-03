@@ -97,7 +97,7 @@ Focus on creating outlines that will result in valuable, comprehensive, and enga
 
         except Exception as e:
             self.logger.error(f"Failed to create outline: {e}")
-            raise ContentQualityError(f"Outline creation failed: {e}")
+            raise ContentQualityError(f"Outline creation failed: {e}") from e
 
     async def refine_outline(
         self, current_outline: ContentOutline, feedback: str, blog_input: BlogInput
@@ -135,7 +135,7 @@ Focus on creating outlines that will result in valuable, comprehensive, and enga
 
         except Exception as e:
             self.logger.error(f"Failed to refine outline: {e}")
-            raise ContentQualityError(f"Outline refinement failed: {e}")
+            raise ContentQualityError(f"Outline refinement failed: {e}") from e
 
     def _build_outline_prompt(self, blog_input: BlogInput) -> str:
         """Build the prompt for creating a blog outline."""
@@ -323,7 +323,7 @@ Please provide a refined outline that addresses the feedback while maintaining t
 
         except Exception as e:
             self.logger.error(f"Failed to parse outline response: {e}")
-            raise ContentQualityError(f"Outline parsing failed: {e}")
+            raise ContentQualityError(f"Outline parsing failed: {e}") from e
 
     async def _validate_outline_quality(
         self, outline: ContentOutline, blog_input: BlogInput

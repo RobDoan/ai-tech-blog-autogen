@@ -327,7 +327,7 @@ class DialogueGenerator:
 
         except Exception as e:
             self.logger.error(f"Dialogue generation failed: {e}")
-            raise DialogueGenerationError(f"Failed to generate dialogue: {e}")
+            raise DialogueGenerationError(f"Failed to generate dialogue: {e}") from e
 
     def _create_conversation_context(
         self,
@@ -338,10 +338,9 @@ class DialogueGenerator:
         """Create context for conversation generation."""
         return ConversationContext(
             main_topic=outline.title,
-            technical_concepts=[
-                concept
-                for concept in synthesized_knowledge.original_knowledge.technical_concepts
-            ][:10],
+            technical_concepts=list(
+                synthesized_knowledge.original_knowledge.technical_concepts
+            )[:10],
             target_audience_level=blog_input.target_audience.value,
             conversation_goals=[
                 "Explore practical development challenges",
@@ -419,7 +418,7 @@ class DialogueGenerator:
         key_points = content_section.key_points
 
         # Technical context for this section
-        tech_context = self.contextualizer.contextualize_technical_discussion(
+        self.contextualizer.contextualize_technical_discussion(
             section_title,
             [],  # We'll pass actual technical details when available
             context.target_audience_level,

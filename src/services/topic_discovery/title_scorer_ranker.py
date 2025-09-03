@@ -734,7 +734,6 @@ class TitleScorerRanker:
     def _analyze_target_metrics(self, ranked_title: RankedBlogTitle):
         """Analyze and extract target metrics from the title"""
 
-        title_text = ranked_title.title.lower()
         metrics = []
 
         # Look for performance metrics

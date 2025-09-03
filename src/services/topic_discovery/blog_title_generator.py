@@ -362,22 +362,18 @@ class BlogTitleGenerator:
 
         # Extract key data points
         technologies = list(
-            set(
-                tech
-                for tc in insight.technical_concepts
-                for tech in tc.technologies_used
-            )
+            {tech for tc in insight.technical_concepts for tech in tc.technologies_used}
         )
 
         companies = list(
-            set(
+            {
                 tc.concept
                 for tc in insight.technical_concepts
                 if any(
                     comp in tc.concept
                     for comp in ["Netflix", "Google", "Amazon", "Facebook", "Microsoft"]
                 )
-            )
+            }
         )
 
         return {
@@ -483,22 +479,18 @@ Generate titles following the specified patterns with maximum specificity.
 
         # Extract data for template substitution
         technologies = list(
-            set(
-                tech
-                for tc in insight.technical_concepts
-                for tech in tc.technologies_used
-            )
+            {tech for tc in insight.technical_concepts for tech in tc.technologies_used}
         )[:3]
 
         companies = list(
-            set(
+            {
                 tc.concept
                 for tc in insight.technical_concepts
                 if any(
                     comp in tc.concept
                     for comp in ["Netflix", "Google", "Amazon", "Facebook", "Microsoft"]
                 )
-            )
+            }
         )[:2]
 
         metrics = insight.performance_metrics[:2]

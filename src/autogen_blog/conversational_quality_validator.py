@@ -593,7 +593,7 @@ class TechnicalAccuracyValidator:
             return True
         except SyntaxError:
             return False
-        except:
+        except Exception:
             return True  # Other errors don't indicate syntax problems
 
     async def _validate_research_alignment(

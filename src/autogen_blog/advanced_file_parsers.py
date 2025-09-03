@@ -18,7 +18,6 @@ except ImportError:
 
 try:
     import docx
-    from docx.document import Document
 
     HAS_DOCX = True
 except ImportError:
@@ -189,7 +188,7 @@ class PDFParser(FileParser):
         )
 
         if technical_terms:
-            unique_terms = list(set(term.lower() for term in technical_terms))
+            unique_terms = list({term.lower() for term in technical_terms})
             insights.append(
                 Insight(
                     content=f"Technical concepts found: {', '.join(unique_terms[:10])}",
@@ -383,7 +382,7 @@ class DOCXParser(FileParser):
         )
 
         if technical_terms:
-            unique_terms = list(set(term.lower() for term in technical_terms))
+            unique_terms = list({term.lower() for term in technical_terms})
             insights.append(
                 Insight(
                     content=f"Technical topics: {', '.join(unique_terms[:8])}",

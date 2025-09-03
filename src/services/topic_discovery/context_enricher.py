@@ -695,7 +695,7 @@ class ContextEnricher:
         # Technology-based relationships
         for tech in technologies:
             tech_lower = tech.lower()
-            for category, tech_data in self.tech_taxonomy.items():
+            for _category, tech_data in self.tech_taxonomy.items():
                 if tech_lower in str(tech_data).lower():
                     related.update(tech_data.get("related_concepts", []))
 

@@ -301,7 +301,6 @@ class TechNewsScanner:
         ]
 
         topic_data = {}
-        source_attribution = {}
 
         for article in articles:
             text = f"{article['title']} {article['description']}".lower()

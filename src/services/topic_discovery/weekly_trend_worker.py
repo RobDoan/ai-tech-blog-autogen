@@ -338,7 +338,7 @@ class WeeklyTrendWorker:
 
         # Calculate final scores and prepare output
         aggregated_trends = []
-        for topic_key, trend_data in trend_map.items():
+        for trend_data in trend_map.values():
             # Combined scoring algorithm
             news_weight = 0.6
             external_weight = 0.4

@@ -316,9 +316,6 @@ class PatternDetector:
             f"Detecting emerging themes from {len(enriched_titles)} titles"
         )
 
-        # Extract and cluster concepts
-        concept_clusters = self._extract_concept_clusters(enriched_titles)
-
         # Identify technology themes
         tech_themes = self._identify_technology_themes(enriched_titles)
 
@@ -377,13 +374,13 @@ class PatternDetector:
         concept_clusters = defaultdict(list)
         processed = set()
 
-        for concept, count in concept_counts.most_common():
+        for concept, _count in concept_counts.most_common():
             if concept in processed:
                 continue
 
             # Find similar concepts
             similar_concepts = [concept]
-            for other_concept, _ in concept_counts.items():
+            for other_concept in concept_counts:
                 if other_concept != concept and other_concept not in processed:
                     if self._are_concepts_similar(concept, other_concept):
                         similar_concepts.append(other_concept)
@@ -399,7 +396,6 @@ class PatternDetector:
     def _extract_concepts_from_text(self, text: str) -> list[str]:
         """Extract meaningful concepts from text using NLP patterns"""
 
-        text_lower = text.lower()
         concepts = []
 
         # Extract technology names
@@ -763,7 +759,6 @@ class PatternDetector:
             "typescript",
             "react 19",
         ]
-        stable_indicators = ["javascript", "python", "api", "database", "web"]
         declining_indicators = ["jquery", "angular.js", "php", "ruby"]
 
         theme_text = f"{theme.theme_name} {' '.join(theme.key_technologies)}".lower()
@@ -1129,14 +1124,14 @@ class PatternDetector:
         """Analyze the connection between two themes"""
 
         # Calculate technology overlap
-        tech_a = set([tech.lower() for tech in theme_a.key_technologies])
-        tech_b = set([tech.lower() for tech in theme_b.key_technologies])
+        tech_a = {tech.lower() for tech in theme_a.key_technologies}
+        tech_b = {tech.lower() for tech in theme_b.key_technologies}
         shared_tech = tech_a.intersection(tech_b)
         tech_connection = len(shared_tech) / max(len(tech_a), len(tech_b), 1)
 
         # Calculate concept overlap
-        concept_a = set([concept.lower() for concept in theme_a.related_concepts])
-        concept_b = set([concept.lower() for concept in theme_b.related_concepts])
+        concept_a = {concept.lower() for concept in theme_a.related_concepts}
+        concept_b = {concept.lower() for concept in theme_b.related_concepts}
         shared_concepts = concept_a.intersection(concept_b)
         concept_connection = len(shared_concepts) / max(
             len(concept_a), len(concept_b), 1

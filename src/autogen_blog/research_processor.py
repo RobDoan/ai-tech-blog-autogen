@@ -328,7 +328,7 @@ class TextParser(FileParser):
         )
 
         if technical_terms:
-            unique_terms = list(set(term.lower() for term in technical_terms))
+            unique_terms = list({term.lower() for term in technical_terms})
             insights.append(
                 Insight(
                     content=f"Technical concepts: {', '.join(unique_terms)}",
@@ -373,7 +373,7 @@ class JSONParser(FileParser):
                 file_type="json",
                 metadata={
                     "structure": "list" if isinstance(data, list) else "object",
-                    "items_count": len(data) if isinstance(data, (list, dict)) else 1,
+                    "items_count": len(data) if isinstance(data, list | dict) else 1,
                     **metadata.__dict__,
                 },
                 extracted_insights=[insight.content for insight in insights],
@@ -398,7 +398,7 @@ class JSONParser(FileParser):
             for key, value in data.items():
                 if isinstance(value, str):
                     text_parts.append(f"{key}: {value}")
-                elif isinstance(value, (int, float, bool)):
+                elif isinstance(value, int | float | bool):
                     text_parts.append(f"{key}: {value}")
                 else:
                     text_parts.append(f"{key}: {type(value).__name__}")
@@ -658,4 +658,4 @@ class ResearchProcessor:
 
     def get_supported_formats(self) -> list[str]:
         """Get list of supported file formats."""
-        return sorted(list(self.supported_extensions))
+        return sorted(self.supported_extensions)

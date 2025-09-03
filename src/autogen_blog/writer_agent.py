@@ -109,7 +109,7 @@ Focus on creating content that is both technically accurate and highly readable,
 
         except Exception as e:
             self.logger.error(f"Failed to generate content: {e}")
-            raise ContentQualityError(f"Content generation failed: {e}")
+            raise ContentQualityError(f"Content generation failed: {e}") from e
 
     async def revise_content(
         self,
@@ -154,7 +154,7 @@ Focus on creating content that is both technically accurate and highly readable,
 
         except Exception as e:
             self.logger.error(f"Failed to revise content: {e}")
-            raise ContentQualityError(f"Content revision failed: {e}")
+            raise ContentQualityError(f"Content revision failed: {e}") from e
 
     def _build_content_prompt(
         self, outline: ContentOutline, blog_input: BlogInput
@@ -300,7 +300,7 @@ Please provide the complete revised blog post in markdown format, incorporating 
 
         except Exception as e:
             self.logger.error(f"Failed to parse content response: {e}")
-            raise ContentQualityError(f"Content parsing failed: {e}")
+            raise ContentQualityError(f"Content parsing failed: {e}") from e
 
     def clean_markdown_content(self, content: str) -> str:
         """Clean and normalize markdown content."""
@@ -372,9 +372,6 @@ Please provide the complete revised blog post in markdown format, incorporating 
 
         # Extract potential keywords (simple heuristic)
         keywords = []
-        # Remove markdown formatting for keyword extraction
-        text_content = re.sub(r"[#*`_\\[\\](){}]", " ", content.lower())
-        # This is a simplified approach - you might want more sophisticated keyword extraction
 
         return ContentMetadata(
             word_count=word_count,
@@ -529,7 +526,6 @@ Please provide the complete revised blog post in markdown format, incorporating 
         # Check header hierarchy
         h1_count = len(re.findall(r"^# ", content_text, re.MULTILINE))
         h2_count = len(re.findall(r"^## ", content_text, re.MULTILINE))
-        h3_count = len(re.findall(r"^### ", content_text, re.MULTILINE))
 
         if h1_count == 1:
             structure_factors.append(0.2)

@@ -120,7 +120,7 @@ Always provide structured analysis in JSON format with keyword recommendations, 
 
         except Exception as e:
             self.logger.error(f"Failed to analyze keywords: {e}")
-            raise SEOServiceError(f"Keyword analysis failed: {e}")
+            raise SEOServiceError(f"Keyword analysis failed: {e}") from e
 
     async def optimize_content(
         self,
@@ -165,7 +165,7 @@ Always provide structured analysis in JSON format with keyword recommendations, 
 
         except Exception as e:
             self.logger.error(f"Failed to optimize content: {e}")
-            raise SEOServiceError(f"Content optimization failed: {e}")
+            raise SEOServiceError(f"Content optimization failed: {e}") from e
 
     def _build_keyword_analysis_prompt(
         self,
@@ -394,7 +394,7 @@ Ensure the optimized content reads naturally while being well-optimized for the 
 
         except Exception as e:
             self.logger.error(f"Failed to parse keyword analysis: {e}")
-            raise SEOServiceError(f"Keyword analysis parsing failed: {e}")
+            raise SEOServiceError(f"Keyword analysis parsing failed: {e}") from e
 
     async def _parse_optimization_response(
         self, response: AgentMessage, original_content: BlogContent
@@ -431,7 +431,7 @@ Ensure the optimized content reads naturally while being well-optimized for the 
 
         except Exception as e:
             self.logger.error(f"Failed to parse optimization response: {e}")
-            raise SEOServiceError(f"Optimization parsing failed: {e}")
+            raise SEOServiceError(f"Optimization parsing failed: {e}") from e
 
     def _validate_keyword_analysis(self, analysis: KeywordAnalysis) -> None:
         """Validate keyword analysis quality."""

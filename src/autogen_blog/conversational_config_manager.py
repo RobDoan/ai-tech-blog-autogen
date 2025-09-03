@@ -8,6 +8,7 @@ conversation styles, and conversational writing preferences.
 import json
 import logging
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -617,7 +618,9 @@ class ConversationalConfigManager:
         try:
             return load_persona_config_from_file(config_file)
         except Exception as e:
-            raise ConfigurationError(f"Failed to load persona config '{name}': {e}")
+            raise ConfigurationError(
+                f"Failed to load persona config '{name}': {e}"
+            ) from e
 
     def save_persona_config(self, name: str, config: PersonaConfig) -> None:
         """Save a persona configuration."""
@@ -627,7 +630,9 @@ class ConversationalConfigManager:
             save_persona_config_to_file(config, config_file)
             self.logger.info(f"Saved persona configuration: {name}")
         except Exception as e:
-            raise ConfigurationError(f"Failed to save persona config '{name}': {e}")
+            raise ConfigurationError(
+                f"Failed to save persona config '{name}': {e}"
+            ) from e
 
     def get_preset(self, preset_type: PresetType | str) -> dict[str, Any]:
         """Get a preset configuration."""
@@ -648,7 +653,9 @@ class ConversationalConfigManager:
             with open(preset_file, encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            raise ConfigurationError(f"Failed to load preset '{preset_name}': {e}")
+            raise ConfigurationError(
+                f"Failed to load preset '{preset_name}': {e}"
+            ) from e
 
     def get_domain_config(self, domain_name: str) -> DomainConfiguration:
         """Get a domain configuration."""
@@ -667,7 +674,7 @@ class ConversationalConfigManager:
         except Exception as e:
             raise ConfigurationError(
                 f"Failed to load domain config '{domain_name}': {e}"
-            )
+            ) from e
 
     def create_custom_config_from_preset(
         self,
@@ -699,7 +706,9 @@ class ConversationalConfigManager:
             return base_config
 
         except Exception as e:
-            raise ConfigurationError(f"Failed to create custom config from preset: {e}")
+            raise ConfigurationError(
+                f"Failed to create custom config from preset: {e}"
+            ) from e
 
     def _deep_update(self, base_dict: dict[str, Any], updates: dict[str, Any]) -> None:
         """Deep update a dictionary with another dictionary."""
@@ -749,7 +758,7 @@ class ConversationalConfigManager:
             self.logger.info(f"Configuration exported to {output_path}")
 
         except Exception as e:
-            raise ConfigurationError(f"Failed to export configuration: {e}")
+            raise ConfigurationError(f"Failed to export configuration: {e}") from e
 
     def import_configuration(self, import_path: Path, overwrite: bool = False) -> None:
         """Import configurations from a file."""
@@ -795,7 +804,7 @@ class ConversationalConfigManager:
             self.logger.info(f"Configuration imported from {import_path}")
 
         except Exception as e:
-            raise ConfigurationError(f"Failed to import configuration: {e}")
+            raise ConfigurationError(f"Failed to import configuration: {e}") from e
 
     def validate_configuration(self, config: PersonaConfig) -> list[str]:
         """Validate a persona configuration and return issues."""
@@ -869,6 +878,3 @@ def get_recommended_config_for_topic(
 
     else:
         return "default"
-
-
-from datetime import datetime

@@ -319,30 +319,30 @@ def main():
 Examples:
   # Generate a basic blog post
   python -m src.autogen_blog.multi_agent_blog_writer "Introduction to FastAPI"
-  
+
   # Generate with additional context
   python -m src.autogen_blog.multi_agent_blog_writer "Docker Best Practices" \\
     --description "Focus on security and performance" \\
     --audience advanced \\
     --length 2000 \\
     --output blog_post.md
-  
+
   # Generate with book reference
   python -m src.autogen_blog.multi_agent_blog_writer "Python Async Programming" \\
     --book-reference "Fluent Python by Luciano Ramalho" \\
     --output async_python.md
-  
+
   # Generate conversational blog post
   python -m src.autogen_blog.multi_agent_blog_writer "React State Management" \\
     --conversational \\
     --output react_conversation.md
-  
+
   # Generate with research materials
   python -m src.autogen_blog.multi_agent_blog_writer "Machine Learning Best Practices" \\
     --research-folder ./research_docs \\
     --conversational \\
     --output ml_conversation.md
-  
+
   # Generate with custom personas
   python -m src.autogen_blog.multi_agent_blog_writer "DevOps Automation" \\
     --conversational \\
