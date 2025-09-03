@@ -9,6 +9,10 @@ This project uses `uv` as the package manager. Key commands:
 - `uv run python main.py` - Run the main application
 - `uv install` - Install dependencies from pyproject.toml
 - `uv sync` - Sync dependencies and update lockfile
+- `uv sync --group dev` - Install development dependencies including linting tools
+- `uv run ruff check src/` - Run linter on source code
+- `uv run ruff format src/` - Format source code
+- `uv run ruff check --fix src/` - Run linter and auto-fix issues
 
 ## Project Architecture
 

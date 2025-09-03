@@ -7,7 +7,7 @@ configuration classes, and result objects used throughout the blog generation wo
 
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 
 
@@ -38,7 +38,7 @@ class BlogInput(BaseModel):
     target_audience: TargetAudience = Field(TargetAudience.INTERMEDIATE, description="Target audience level")
     preferred_length: int = Field(1500, description="Preferred word count for the blog post", ge=500, le=5000)
 
-    @validator('topic')
+    @field_validator('topic')
     def topic_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError('Topic cannot be empty')
@@ -62,7 +62,7 @@ class ContentOutline(BaseModel):
     estimated_word_count: int = Field(0, description="Total estimated word count")
     target_keywords: List[str] = Field(default_factory=list, description="Target SEO keywords")
 
-    @validator('sections')
+    @field_validator('sections')
     def must_have_sections(cls, v):
         if len(v) < 1:
             raise ValueError('Outline must have at least one section')
@@ -100,7 +100,7 @@ class BlogContent(BaseModel):
     code_blocks: List[CodeBlock] = Field(default_factory=list, description="Code examples included")
     metadata: ContentMetadata = Field(default_factory=ContentMetadata, description="Content metadata")
 
-    @validator('content')
+    @field_validator('content')
     def content_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError('Content cannot be empty')
@@ -167,9 +167,9 @@ class BlogResult(BaseModel):
     error_message: Optional[str] = Field(None, description="Error message if generation failed")
     generation_time_seconds: Optional[float] = Field(None, description="Total generation time")
     
-    @validator('content')
-    def content_required_if_success(cls, v, values):
-        if values.get('success') and not v.strip():
+    @field_validator('content')
+    def content_required_if_success(cls, v, info):
+        if info.data.get('success') and not v.strip():
             raise ValueError('Content is required for successful generation')
         return v
 

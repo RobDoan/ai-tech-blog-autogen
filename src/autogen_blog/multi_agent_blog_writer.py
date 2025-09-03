@@ -31,6 +31,17 @@ from .multi_agent_models import (
     ConfigurationError
 )
 
+# Import conversational components
+from .research_processor import ResearchProcessor
+from .information_synthesizer import InformationSynthesizer
+from .persona_system import (
+    load_persona_config_from_file,
+    create_default_persona_config,
+    PersonaManager,
+    PersonaConfig
+)
+from .conversational_writer_agent import ConversationalWriterAgent
+
 
 def setup_logging(verbose: bool = False) -> None:
     """Set up logging configuration."""
@@ -85,7 +96,10 @@ async def generate_blog_post(
     target_audience: str = "intermediate",
     preferred_length: int = 1500,
     output_file: Optional[str] = None,
-    verbose: bool = False
+    verbose: bool = False,
+    research_folder: Optional[str] = None,
+    conversational_mode: bool = False,
+    persona_config: Optional[str] = None
 ) -> None:
     """
     Generate a blog post using the multi-agent system.
@@ -98,6 +112,9 @@ async def generate_blog_post(
         preferred_length: Preferred word count
         output_file: Optional output file path
         verbose: Enable verbose logging
+        research_folder: Path to folder containing research materials
+        conversational_mode: Generate content in conversational format
+        persona_config: Path to persona configuration JSON file
     """
     setup_logging(verbose)
     logger = logging.getLogger(__name__)
@@ -108,16 +125,97 @@ async def generate_blog_post(
         
         logger.info(f"Starting blog generation for topic: {topic}")
         logger.info(f"Target audience: {target_audience}, Length: {preferred_length} words")
+        if conversational_mode:
+            logger.info("Mode: Conversational format enabled")
+        if research_folder:
+            logger.info(f"Research folder: {research_folder}")
         
-        # Create orchestrator
-        orchestrator = BlogWriterOrchestrator(agent_config, workflow_config)
+        # Process research materials if provided
+        research_knowledge = None
+        if research_folder:
+            research_path = Path(research_folder)
+            if not research_path.exists():
+                logger.error(f"Research folder does not exist: {research_folder}")
+                sys.exit(1)
+            
+            logger.info("Processing research materials...")
+            processor = ResearchProcessor()
+            knowledge_base = await processor.process_folder(research_path)
+            
+            # Get research files for synthesis
+            files = processor._find_supported_files(research_path, recursive=True)
+            research_files = await processor._process_files_concurrently(files)
+            
+            # Synthesize knowledge
+            synthesizer = InformationSynthesizer()
+            research_knowledge = await synthesizer.synthesize_knowledge(knowledge_base, research_files)
+            
+            logger.info(f"Processed {len(knowledge_base.insights)} insights from research")
         
         # Generate blog post
-        result = await orchestrator.generate_blog(
-            topic=topic,
-            description=description,
-            book_reference=book_reference
-        )
+        if conversational_mode:
+            # Load persona configuration
+            persona_config_obj = None
+            if persona_config:
+                persona_config_path = Path(persona_config)
+                if not persona_config_path.exists():
+                    logger.error(f"Persona config file does not exist: {persona_config}")
+                    sys.exit(1)
+                persona_config_obj = load_persona_config_from_file(persona_config_path)
+            else:
+                persona_config_obj = create_default_persona_config()
+            
+            # Use conversational writer
+            writer_agent = ConversationalWriterAgent(agent_config)
+            
+            # Create blog input
+            blog_input = BlogInput(
+                topic=topic,
+                description=description,
+                book_reference=book_reference,
+                target_audience=TargetAudience(target_audience),
+                preferred_length=preferred_length
+            )
+            
+            # Generate content outline (we'll need to adapt this)
+            orchestrator = BlogWriterOrchestrator(agent_config, workflow_config)
+            planner = orchestrator.content_planner
+            outline = await planner.create_outline(blog_input)
+            
+            # Create personas
+            persona_manager = PersonaManager()
+            personas = persona_manager.create_personas(persona_config_obj)
+            
+            # Generate conversational content
+            result_content = await writer_agent.write_conversational_content(
+                outline, blog_input, research_knowledge, personas, persona_config_obj
+            )
+            
+            # Create result object compatible with existing interface
+            from .multi_agent_models import BlogResult
+            result = BlogResult(
+                content=result_content.content,
+                metadata={
+                    'word_count': result_content.metadata.word_count,
+                    'reading_time_minutes': result_content.metadata.reading_time_minutes,
+                    'conversation_flow_score': result_content.conversation_flow_score,
+                    'synthesis_confidence': result_content.synthesis_confidence,
+                    'personas_used': result_content.personas_used,
+                    'research_sources_count': len(result_content.research_sources)
+                },
+                generation_log=[],  # Empty for now
+                success=True,
+                generation_time_seconds=0.0
+            )
+            
+        else:
+            # Use traditional orchestrator
+            orchestrator = BlogWriterOrchestrator(agent_config, workflow_config)
+            result = await orchestrator.generate_blog(
+                topic=topic,
+                description=description,
+                book_reference=book_reference
+            )
         
         if result.success:
             logger.info(f"Blog generation completed successfully!")
@@ -206,6 +304,24 @@ Examples:
   python -m src.autogen_blog.multi_agent_blog_writer "Python Async Programming" \\
     --book-reference "Fluent Python by Luciano Ramalho" \\
     --output async_python.md
+  
+  # Generate conversational blog post
+  python -m src.autogen_blog.multi_agent_blog_writer "React State Management" \\
+    --conversational \\
+    --output react_conversation.md
+  
+  # Generate with research materials
+  python -m src.autogen_blog.multi_agent_blog_writer "Machine Learning Best Practices" \\
+    --research-folder ./research_docs \\
+    --conversational \\
+    --output ml_conversation.md
+  
+  # Generate with custom personas
+  python -m src.autogen_blog.multi_agent_blog_writer "DevOps Automation" \\
+    --conversational \\
+    --persona-config ./personas.json \\
+    --research-folder ./devops_research \\
+    --output devops_dialogue.md
 
 Environment Variables:
   OPENAI_API_KEY       OpenAI API key (required)
@@ -258,6 +374,22 @@ Environment Variables:
         "-v", "--verbose",
         action="store_true",
         help="Enable verbose logging"
+    )
+    
+    parser.add_argument(
+        "-r", "--research-folder",
+        help="Path to folder containing research materials (MD, TXT, JSON files)"
+    )
+    
+    parser.add_argument(
+        "-c", "--conversational",
+        action="store_true",
+        help="Generate content in conversational dialogue format"
+    )
+    
+    parser.add_argument(
+        "-p", "--persona-config",
+        help="Path to JSON file containing persona configuration"
     )
     
     parser.add_argument(
@@ -317,6 +449,19 @@ Environment Variables:
         print("Error: Maximum word count is 5000")
         sys.exit(1)
     
+    # Validate conversational mode arguments
+    if args.conversational and args.persona_config:
+        persona_path = Path(args.persona_config)
+        if not persona_path.exists():
+            print(f"Error: Persona config file does not exist: {args.persona_config}")
+            sys.exit(1)
+    
+    if args.research_folder:
+        research_path = Path(args.research_folder)
+        if not research_path.exists():
+            print(f"Error: Research folder does not exist: {args.research_folder}")
+            sys.exit(1)
+    
     # Run the blog generation
     asyncio.run(generate_blog_post(
         topic=args.topic,
@@ -325,7 +470,10 @@ Environment Variables:
         target_audience=args.audience,
         preferred_length=args.length,
         output_file=args.output,
-        verbose=args.verbose
+        verbose=args.verbose,
+        research_folder=args.research_folder,
+        conversational_mode=args.conversational,
+        persona_config=args.persona_config
     ))
 
 
